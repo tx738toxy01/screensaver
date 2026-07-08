@@ -53,15 +53,27 @@
         }
 
         /* --- DETSKÁ ZÓNA --- */
+        /* Zabezpečí preklopenie blokov vedľa seba, keď otočíš telefón na šírku */
+        @media (max-height: 600px) and (orientation: landscape) {
+            #widget-inner {
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 50px !important;
+            }
+            .adults-section {
+                width: auto !important;
+            }
+        }
+
         .kids-section {
             display: flex; flex-direction: column; align-items: stretch; gap: 15px;
         }
         .main-display {
-            display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4vw;
+            /* Jednotky vw sú nahradené. O bezchybné zväčšenie/zmenšenie sa už stará len JS scaler */
+            display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 40px;
         }
         #kid-icon {
-            width: 18vw; height: 18vw; 
-            min-width: 120px; min-height: 120px;
+            width: 200px; height: 200px; 
             flex-shrink: 0; display: block;
             filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.8));
         }
@@ -69,14 +81,14 @@
             width: 100%; height: 100%; display: block; overflow: visible;
         }
         #time-container {
-            display: flex; align-items: baseline; gap: 1vw;
+            display: flex; align-items: baseline; gap: 15px;
         }
         #time { 
-            font-size: 22vw; 
+            font-size: 18rem; 
             font-weight: 700; letter-spacing: 2px; 
             text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 0.85;
         }
-        #seconds, #ampm { font-size: 8vw; font-weight: 700; opacity: 0.6; display: none; }
+        #seconds, #ampm { font-size: 6rem; font-weight: 700; opacity: 0.6; display: none; }
         
         .kids-message-box {
             background: rgba(255, 255, 255, 0.1); padding: 15px 40px; align-self: center;
