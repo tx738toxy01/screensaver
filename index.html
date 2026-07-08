@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Screen Saver - Počasie PRO</title>
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --widget-scale: 1;
+        }
+
         body, html {
             margin: 0; padding: 0; width: 100vw; height: 100vh;
             background-color: #000000; color: #ffffff;
@@ -14,82 +18,125 @@
             overflow: hidden; user-select: none; cursor: default;
         }
 
-        /* Hlavný plávajúci widget */
         #widget {
             position: absolute; display: flex; flex-direction: column;
-            align-items: center; gap: 25px; pointer-events: auto;
+            align-items: center; pointer-events: auto;
+        }
+        
+        #widget-inner {
+            display: flex; flex-direction: column; align-items: stretch; gap: 20px;
+            transform: scale(var(--widget-scale));
+            transform-origin: center center;
+            transition: transform 0.3s ease;
+            width: max-content; 
+        }
+
+        /* --- KLIKATEĽNÉ IKONY A TOAST --- */
+        .clickable-icon {
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .clickable-icon:active {
+            transform: scale(0.9);
+        }
+
+        #toast {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(30, 30, 30, 0.95); color: #FF9800; padding: 15px 40px;
+            border-radius: 30px; font-size: 1.8rem; font-weight: 900;
+            pointer-events: none; opacity: 0; transition: all 0.3s ease; z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        #toast.show {
+            opacity: 1; transform: translateX(-50%) translateY(0);
         }
 
         /* --- DETSKÁ ZÓNA --- */
         .kids-section {
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            display: flex; flex-direction: column; align-items: stretch; gap: 15px;
         }
         .main-display {
-            display: flex; flex-direction: row; align-items: center; gap: 40px;
+            display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4vw;
         }
         #kid-icon {
-            width: 220px; height: 220px;
+            width: 18vw; height: 18vw; 
+            min-width: 120px; min-height: 120px;
+            flex-shrink: 0; display: block;
             filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.8));
         }
+        #kid-icon svg {
+            width: 100%; height: 100%; display: block; overflow: visible;
+        }
         #time-container {
-            display: flex; align-items: baseline; gap: 10px;
+            display: flex; align-items: baseline; gap: 1vw;
         }
         #time { 
-            font-size: 9rem; font-weight: 900; letter-spacing: 5px; 
-            text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 1;
+            font-size: 22vw; 
+            font-weight: 700; letter-spacing: 2px; 
+            text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 0.85;
         }
-        #seconds, #ampm { font-size: 3rem; font-weight: 700; opacity: 0.6; display: none; }
+        #seconds, #ampm { font-size: 8vw; font-weight: 700; opacity: 0.6; display: none; }
         
         .kids-message-box {
-            background: rgba(255, 255, 255, 0.1); padding: 15px 35px; 
+            background: rgba(255, 255, 255, 0.1); padding: 15px 40px; align-self: center;
             border-radius: 50px; border: 3px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px); text-align: center;
         }
-        #kids-message { font-size: 2rem; font-weight: 700; }
+        #kids-message { font-size: 2.5rem; font-weight: 700; }
 
         /* --- ZÓNA PRE DOSPELÝCH --- */
         .adults-section {
-            display: flex; align-items: center; gap: 25px;
-            background: rgba(30, 30, 30, 0.6); padding: 20px 30px; 
-            border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex; align-items: center; justify-content: space-between; 
+            width: 100%; box-sizing: border-box; 
+            gap: 30px;
+            background: rgba(30, 30, 30, 0.6); padding: 25px 40px; 
+            border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         
-        /* Klikateľná oblasť pre aktuálne počasie */
         .adult-current {
-            display: flex; align-items: center; gap: 20px;
-            border-right: 1px solid rgba(255,255,255,0.2); padding-right: 25px;
+            display: flex; align-items: center; gap: 25px;
+            border-right: 1px solid rgba(255,255,255,0.2); padding-right: 35px;
             cursor: pointer; transition: transform 0.2s, background 0.2s;
-            border-radius: 15px; padding-left: 10px;
+            border-radius: 20px; padding-left: 10px;
         }
         .adult-current:hover {
             transform: scale(1.02); background: rgba(255,255,255,0.05);
         }
 
-        .adult-current-icon { width: 60px; height: 60px; }
-        .adult-details { display: flex; flex-direction: column; justify-content: center; }
+        .adult-current-icon { width: 120px; height: 120px; flex-shrink: 0; }
+        .adult-current-icon svg { width: 100%; height: 100%; overflow: visible; }
         
-        #adult-desc { font-size: 1.3rem; font-weight: 900; color: #E0E0E0; line-height: 1.2; margin-bottom: 5px; }
+        .adult-details { display: flex; flex-direction: column; justify-content: center; gap: 0px; }
         
-        /* Nové rozloženie teplôt a vetra */
-        .temp-row { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
-        #adult-main-temp { font-size: 3rem; font-weight: 900; line-height: 1; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
-        .temp-secondary { display: flex; flex-direction: column; font-size: 1.1rem; font-weight: 700; color: #B0BEC5; line-height: 1.3; }
+        /* Nové rozloženie: Popis + Vietor v jednom riadku */
+        .desc-wind-row { display: flex; align-items: center; gap: 20px; margin-bottom: 5px; }
+        #adult-desc { font-size: 1.8rem; font-weight: 900; color: #E0E0E0; line-height: 1.2; }
+        #adult-wind { font-size: 1.3rem; font-weight: 700; color: #90CAF9; display: flex; align-items: center; gap: 6px; }
         
-        #adult-city { font-size: 0.85rem; color: #757575; text-transform: uppercase; letter-spacing: 1px; }
+        /* Nové rozloženie: Teplota + Stĺpec s pocitom */
+        .temp-row { display: flex; align-items: center; gap: 15px; margin: 2px 0 5px 0;}
+        #adult-main-temp { font-size: 5.5rem; font-weight: 900; line-height: 0.8; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
+        
+        .feels-like-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+        .feels-label { font-size: 1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; margin-bottom: -4px; z-index: 1;}
+        #adult-feels-like { font-size: 3.5rem; font-weight: 700; color: #B0BEC5; line-height: 1;}
+        
+        #adult-city { font-size: 1.1rem; color: #757575; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; margin-top: 5px;}
 
-        .adult-forecast { display: flex; gap: 25px; }
+        /* Opravené gigantické ikony pre predpoveď */
+        .adult-forecast { display: flex; justify-content: space-between; flex: 1; margin-left: 15px; gap: 15px; }
         .forecast-item { 
             display: flex; flex-direction: column; align-items: center; 
-            font-size: 1.1rem; font-weight: 700; color: #B0BEC5; gap: 5px;
+            font-size: 1.5rem; font-weight: 700; color: #B0BEC5; gap: 10px; width: 100%;
         }
-        .forecast-icon { width: 40px; height: 40px; }
-
-        svg { width: 100%; height: 100%; overflow: visible; }
+        .forecast-icon { width: 100%; max-width: 85px; height: 85px; display: flex; justify-content: center; align-items: center; }
+        .forecast-icon svg { width: 100%; height: 100%; overflow: visible; }
         
         /* --- NASTAVENIA A MODÁLNE OKNÁ --- */
         #settings-btn {
-            position: absolute; top: 50%; right: 20px; transform: translateY(-50%);
+            position: absolute; top: 20px; right: 20px; 
             opacity: 0; transition: opacity 0.5s ease; cursor: pointer; padding: 10px; z-index: 10;
         }
         .modal {
@@ -98,15 +145,12 @@
             padding: 30px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.15);
             display: none; flex-direction: column; gap: 15px; color: white; z-index: 100;
         }
-        #settings-modal { width: 350px; }
+        #settings-modal { width: 380px; }
         #details-modal { width: 450px; }
         
         .modal h2 { margin: 0 0 10px 0; font-size: 1.5rem; text-align: center; }
         
-        /* Mriežka pre detailné počasie */
-        .details-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-        }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .detail-card {
             background: rgba(0,0,0,0.4); padding: 12px 15px; border-radius: 12px;
             display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.05);
@@ -117,8 +161,10 @@
         .setting-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
         input[type="text"], select { 
             background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); 
-            color: white; padding: 8px; border-radius: 8px; outline: none; width: 130px;
+            color: white; padding: 8px; border-radius: 8px; outline: none; width: 140px;
         }
+        input[type="range"] { width: 140px; }
+        
         .btn-primary {
             margin-top: 15px; background: #FF9800; color: white; border: none; padding: 12px;
             border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; text-align: center;
@@ -131,8 +177,7 @@
 </head>
 <body>
 
-    <!-- Globálne SVG farby a tiene -->
-    <svg width="0" height="0" style="position:absolute;">
+    <svg style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;" aria-hidden="true">
         <defs>
             <linearGradient id="sunGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFEB3B" /><stop offset="100%" stop-color="#F57C00" /></linearGradient>
             <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFF9C4" /><stop offset="100%" stop-color="#FFB300" /></linearGradient>
@@ -140,91 +185,100 @@
             <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4FC3F7" /><stop offset="100%" stop-color="#0288D1" /></linearGradient>
             <linearGradient id="snowGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFFFFF" /><stop offset="100%" stop-color="#81D4FA" /></linearGradient>
             <linearGradient id="lightningGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFFF00" /><stop offset="100%" stop-color="#FF9800" /></linearGradient>
-            <filter id="kidShadow">
-                <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.6"/>
-                <feDropShadow dx="0" dy="-3" stdDeviation="5" flood-color="#ffffff" flood-opacity="0.2"/>
-            </filter>
             <filter id="adultShadow">
                 <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.8"/>
             </filter>
         </defs>
     </svg>
 
+    <div id="toast">Popis</div>
+
     <div id="widget">
-        
-        <!-- DETSKÁ ZÓNA -->
-        <div class="kids-section">
-            <div class="main-display">
-                <div id="kid-icon"></div>
-                <div id="time-container">
-                    <div id="time">00:00</div>
-                    <div id="seconds">00</div>
-                    <div id="ampm">AM</div>
-                </div>
-            </div>
-            <div class="kids-message-box">
-                <div id="kids-message">Načítavam...</div>
-            </div>
-        </div>
-
-        <!-- ZÓNA PRE DOSPELÝCH -->
-        <div class="adults-section">
-            <!-- Klikateľná oblasť pre detail -->
-            <div class="adult-current" id="adult-current-btn" title="Klikni pre detaily">
-                <div id="adult-current-icon" class="adult-current-icon"></div>
-                <div class="adult-details">
-                    <span id="adult-desc">Načítavam...</span>
-                    <div class="temp-row">
-                        <span id="adult-main-temp">--°</span>
-                        <div class="temp-secondary">
-                            <span id="adult-feels-like">Pocit: --°</span>
-                            <span id="adult-wind">💨 -- km/h</span>
-                        </div>
+        <div id="widget-inner">
+            <div class="kids-section">
+                <div class="main-display">
+                    <div id="kid-icon" class="clickable-icon"></div>
+                    <div id="time-container">
+                        <div id="time">00:00</div>
+                        <div id="seconds">00</div>
+                        <div id="ampm">AM</div>
                     </div>
-                    <span id="adult-city">Mesto</span>
+                </div>
+                <div class="kids-message-box">
+                    <div id="kids-message">Načítavam...</div>
                 </div>
             </div>
-            
-            <div class="adult-forecast">
-                <div class="forecast-item">
-                    <span>+3h</span>
-                    <div id="f1-icon" class="forecast-icon"></div>
-                    <span id="f1-temp">--°</span>
+
+            <div class="adults-section">
+                <div class="adult-current" id="adult-current-btn" title="Klikni pre detaily">
+                    <div id="adult-current-icon" class="adult-current-icon"></div>
+                    <div class="adult-details">
+                        
+                        <div class="desc-wind-row">
+                            <span id="adult-desc">Načítavam...</span>
+                            <div id="adult-wind">💨 -- km/h</div>
+                        </div>
+                        
+                        <div class="temp-row">
+                            <span id="adult-main-temp">--°</span>
+                            <div class="feels-like-col">
+                                <span class="feels-label">Pocit</span>
+                                <span id="adult-feels-like">--°</span>
+                            </div>
+                        </div>
+                        
+                        <span id="adult-city">Mesto</span>
+                    </div>
                 </div>
-                <div class="forecast-item">
-                    <span>+6h</span>
-                    <div id="f2-icon" class="forecast-icon"></div>
-                    <span id="f2-temp">--°</span>
-                </div>
-                <div class="forecast-item">
-                    <span>+9h</span>
-                    <div id="f3-icon" class="forecast-icon"></div>
-                    <span id="f3-temp">--°</span>
-                </div>
-                <div class="forecast-item">
-                    <span>+12h</span>
-                    <div id="f4-icon" class="forecast-icon"></div>
-                    <span id="f4-temp">--°</span>
+                
+                <div class="adult-forecast">
+                    <div class="forecast-item">
+                        <span id="f1-time">--:--</span>
+                        <div id="f1-icon" class="forecast-icon clickable-icon"></div>
+                        <span id="f1-temp">--°</span>
+                    </div>
+                    <div class="forecast-item">
+                        <span id="f2-time">--:--</span>
+                        <div id="f2-icon" class="forecast-icon clickable-icon"></div>
+                        <span id="f2-temp">--°</span>
+                    </div>
+                    <div class="forecast-item">
+                        <span id="f3-time">--:--</span>
+                        <div id="f3-icon" class="forecast-icon clickable-icon"></div>
+                        <span id="f3-temp">--°</span>
+                    </div>
+                    <div class="forecast-item">
+                        <span id="f4-time">--:--</span>
+                        <div id="f4-icon" class="forecast-icon clickable-icon"></div>
+                        <span id="f4-temp">--°</span>
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <!-- TLAČIDLO NASTAVENÍ -->
     <div id="settings-btn">
         <svg viewBox="0 0 100 100" width="40" height="40" filter="url(#adultShadow)">
             <path d="M50 35 A 15 15 0 1 0 50 65 A 15 15 0 1 0 50 35 Z M85 45 L75 42 A 30 30 0 0 0 71 31 L76 22 L62 10 L54 18 A 30 30 0 0 0 46 18 L38 10 L24 22 L29 31 A 30 30 0 0 0 25 42 L15 45 L15 55 L25 58 A 30 30 0 0 0 29 69 L24 78 L38 90 L46 82 A 30 30 0 0 0 54 82 L62 90 L76 78 L71 69 A 30 30 0 0 0 75 58 L85 55 Z" fill="#9E9E9E" fill-rule="evenodd"/>
         </svg>
     </div>
 
-    <!-- PREKRYTIE POZADIA PRE OKNÁ -->
     <div id="modal-overlay"></div>
     
-    <!-- OKNO: NASTAVENIA -->
     <div id="settings-modal" class="modal">
         <h2>Nastavenia</h2>
         <div class="setting-row"><label>Mesto:</label><input type="text" id="inp-city"></div>
+        <div class="setting-row">
+            <label>Veľkosť aplikácie:</label>
+            <input type="range" id="inp-scale" min="10" max="100" step="1" value="50">
+        </div>
+        <div class="setting-row">
+            <label>Štýl ikoniek:</label>
+            <select id="inp-icon-style">
+                <option value="kids">Detské (V predpovedi)</option>
+                <option value="split">Klasické (Pre dospelých)</option>
+            </select>
+        </div>
         <div class="setting-row">
             <label>Jednotky:</label>
             <select id="inp-units"><option value="celsius">°C</option><option value="fahrenheit">°F</option></select>
@@ -244,7 +298,6 @@
         <button class="btn-primary" id="save-btn">Uložiť</button>
     </div>
 
-    <!-- OKNO: DETAILNÉ POČASIE -->
     <div id="details-modal" class="modal">
         <h2>Aktuálne podmienky</h2>
         <div class="details-grid">
@@ -261,10 +314,11 @@
     </div>
 
     <script>
-        // --- 1. KONFIGURÁCIA ---
         let config = JSON.parse(localStorage.getItem('familyScreensaver')) || {
-            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: '#ffffff'
+            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: '#ffffff', scaleValue: 50, iconStyle: 'kids'
         };
+        
+        if (config.scale !== undefined && config.scaleValue === undefined) { config.scaleValue = 50; }
 
         const weatherTranslations = {
             0: 'Jasno', 1: 'Prevažne jasno', 2: 'Polooblačno', 3: 'Oblačno',
@@ -272,6 +326,52 @@
             63: 'Dážď', 65: 'Silný dážď', 71: 'Slabé sneženie', 73: 'Sneženie', 
             80: 'Prehánky', 95: 'Búrka', 99: 'Silná búrka'
         };
+
+        let toastTimeout;
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        document.querySelectorAll('.clickable-icon').forEach(icon => {
+            icon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (this.dataset.weather) showToast(this.dataset.weather);
+            });
+        });
+
+        function calculateAndApplyScale() {
+            const inner = document.getElementById('widget-inner');
+            const rect = inner.getBoundingClientRect();
+            
+            const currentScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--widget-scale')) || 1;
+            const safeCurrentScale = currentScale > 0.1 ? currentScale : 1;
+            
+            const unscaledWidth = rect.width / safeCurrentScale;
+            const unscaledHeight = rect.height / safeCurrentScale;
+            
+            const availW = window.innerWidth - 60;
+            const availH = window.innerHeight - 60;
+            
+            const maxScaleX = availW / unscaledWidth;
+            const maxScaleY = availH / unscaledHeight;
+            const maxSafeScale = Math.min(maxScaleX, maxScaleY);
+            
+            const minScale = 0.3; 
+            const safeMax = Math.max(minScale, maxSafeScale);
+            
+            const val = config.scaleValue !== undefined ? config.scaleValue : 50;
+            const percentage = (val - 10) / 90; 
+            const actualScale = minScale + (percentage * (safeMax - minScale));
+            
+            document.documentElement.style.setProperty('--widget-scale', actualScale);
+            moveWidget(); 
+        }
+
+        window.addEventListener('resize', calculateAndApplyScale);
 
         function getWindDirection(degree) {
             const directions = ['S (Sever)', 'SV', 'V (Východ)', 'JV', 'J (Juh)', 'JZ', 'Z (Západ)', 'SZ'];
@@ -283,39 +383,53 @@
             document.getElementById('seconds').style.display = config.showSeconds ? 'block' : 'none';
             document.getElementById('ampm').style.display = config.timeFormat === '12' ? 'block' : 'none';
             document.getElementById('adult-city').textContent = config.city;
+            calculateAndApplyScale();
             updateTime();
         }
 
-        // --- 2. GENERÁTORY IKONIEK ---
         function getKidSVG(wmoCode, temp, isNight) {
-            const svgStart = `<svg viewBox="0 0 100 100" filter="url(#kidShadow)">`;
+            const svgStart = `<svg viewBox="0 0 100 100">`;
             const svgEnd = `</svg>`;
+            
             const sunSmile = `<circle cx="50" cy="50" r="35" fill="url(#sunGrad)"/><path d="M50 5 L50 15 M50 85 L50 95 M5 50 L15 50 M85 50 L95 50 M18 18 L25 25 M75 75 L82 82 M18 82 L25 75 M75 25 L82 18" stroke="url(#sunGrad)" stroke-width="8" stroke-linecap="round"/><circle cx="35" cy="55" r="5" fill="#FF8A80" opacity="0.8"/><circle cx="65" cy="55" r="5" fill="#FF8A80" opacity="0.8"/><circle cx="38" cy="45" r="4.5" fill="#1A237E"/><circle cx="39" cy="44" r="1.5" fill="#FFF"/><circle cx="62" cy="45" r="4.5" fill="#1A237E"/><circle cx="63" cy="44" r="1.5" fill="#FFF"/><path d="M42 60 Q 50 68 58 60" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/>`;
             const sunGlasses = `<circle cx="50" cy="50" r="35" fill="url(#sunGrad)"/><path d="M50 5 L50 15 M50 85 L50 95 M5 50 L15 50 M85 50 L95 50 M18 18 L25 25 M75 75 L82 82 M18 82 L25 75 M75 25 L82 18" stroke="url(#sunGrad)" stroke-width="8" stroke-linecap="round"/><rect x="23" y="38" width="24" height="16" rx="5" fill="#FFF"/><rect x="53" y="38" width="24" height="16" rx="5" fill="#FFF"/><rect x="25" y="40" width="20" height="12" rx="3" fill="#111"/><rect x="55" y="40" width="20" height="12" rx="3" fill="#111"/><path d="M28 42 L 40 50 M58 42 L 70 50" stroke="#FFF" stroke-width="2" stroke-linecap="round"/><path d="M47 45 L53 45" stroke="#FFF" stroke-width="4"/><path d="M40 65 Q 50 75 60 65" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/>`;
             const moonSleep = `<path d="M55 15 A 35 35 0 1 0 85 75 A 40 40 0 1 1 55 15 Z" fill="url(#moonGrad)"/><circle cx="45" cy="55" r="5" fill="#FF8A80" opacity="0.7"/><path d="M33 46 Q 40 53 47 46" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M55 15 L 75 5 L 85 25 Z" fill="#29B6F6"/><circle cx="75" cy="5" r="8" fill="#FFF"/>`;
             const snowman = `<circle cx="50" cy="75" r="20" fill="url(#snowGrad)"/><circle cx="50" cy="45" r="15" fill="url(#snowGrad)"/><circle cx="50" cy="22" r="10" fill="url(#snowGrad)"/><path d="M50 20 L65 24 L50 26 Z" fill="#FF5722"/><circle cx="45" cy="18" r="2.5" fill="#1A237E"/><circle cx="45.5" cy="17.5" r="1" fill="#FFF"/><circle cx="54" cy="18" r="2.5" fill="#1A237E"/><circle cx="54.5" cy="17.5" r="1" fill="#FFF"/><rect x="42" y="0" width="16" height="12" fill="#4CAF50" rx="2"/><rect x="42" y="9" width="16" height="3" fill="#F44336"/><rect x="36" y="12" width="28" height="4" fill="#4CAF50" rx="2"/><circle cx="50" cy="40" r="2.5" fill="#1A237E"/><circle cx="50" cy="50" r="2.5" fill="#1A237E"/><circle cx="50" cy="70" r="2.5" fill="#1A237E"/>`;
             const duckPuddle = `<ellipse cx="50" cy="85" rx="35" ry="10" fill="url(#waterGrad)"/><circle cx="40" cy="65" r="15" fill="#FFEE58"/><circle cx="60" cy="65" r="15" fill="#FFEE58"/><path d="M30 65 Q 50 85 70 65 Z" fill="#FFEE58"/><circle cx="35" cy="65" r="3" fill="#FF8A80" opacity="0.8"/><circle cx="38" cy="60" r="3.5" fill="#1A237E"/><circle cx="39" cy="59" r="1.5" fill="#FFF"/><path d="M25 62 L 12 65 L 25 69 Z" fill="#FF5722"/><path d="M20 30 L15 45 M40 25 L35 40 M60 30 L55 45 M80 20 L75 35" stroke="url(#waterGrad)" stroke-width="4" stroke-linecap="round"/>`;
-            const umbrella = `<path d="M20 50 A 30 30 0 0 1 80 50 Z" fill="#E91E63"/><path d="M50 50 L50 80 A 6 6 0 0 0 62 80" stroke="#FFEB3B" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="20" cy="50" r="3" fill="#FFF"/><circle cx="50" cy="20" r="3" fill="#FFF"/><circle cx="80" cy="50" r="3" fill="#FFF"/><path d="M25 70 L20 85 M75 70 L70 85 M35 90 L30 100" stroke="url(#waterGrad)" stroke-width="4" stroke-linecap="round"/>`;
-            const lightning = `<path d="M55 10 L25 50 L50 50 L40 95 L75 45 L50 45 Z" fill="url(#lightningGrad)"/><rect x="35" y="30" width="35" height="10" rx="4" fill="#E53935" transform="rotate(-15 50 35)"/><circle cx="45" cy="31" r="3" fill="#FFF"/><circle cx="45" cy="31" r="1.5" fill="#1A237E"/><circle cx="58" cy="28" r="3" fill="#FFF"/><circle cx="58" cy="28" r="1.5" fill="#1A237E"/>`;
-            const happyCloud = `<path d="M25 65 A 20 20 0 0 1 25 25 A 25 25 0 0 1 70 20 A 25 25 0 0 1 75 70 Z" fill="url(#cloudGrad)"/><circle cx="35" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="65" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="40" cy="42" r="4" fill="#1A237E"/><circle cx="41" cy="41" r="1.5" fill="#FFF"/><circle cx="60" cy="42" r="4" fill="#1A237E"/><circle cx="61" cy="41" r="1.5" fill="#FFF"/><path d="M46 52 Q 50 58 54 52" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/>`;
             const penguin = `<ellipse cx="50" cy="60" rx="25" ry="35" fill="#1565C0"/><ellipse cx="50" cy="65" rx="18" ry="25" fill="#FFF"/><circle cx="50" cy="35" r="18" fill="#1565C0"/><circle cx="44" cy="32" r="4" fill="#FFF"/><circle cx="44" cy="32" r="1.5" fill="#1A237E"/><circle cx="56" cy="32" r="4" fill="#FFF"/><circle cx="56" cy="32" r="1.5" fill="#1A237E"/><path d="M50 38 L45 44 L55 44 Z" fill="#FF9800"/><path d="M35 15 Q 50 5 65 15 Q 50 25 35 15 Z" fill="#E91E63"/><circle cx="30" cy="18" r="6" fill="#00BCD4"/>`;
+            
+            const happyCloud = `<path d="M25 65 A 20 20 0 0 1 25 25 A 25 25 0 0 1 70 20 A 25 25 0 0 1 75 70 Z" fill="url(#cloudGrad)"/><circle cx="35" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="65" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="40" cy="42" r="4" fill="#1A237E"/><circle cx="41" cy="41" r="1.5" fill="#FFF"/><circle cx="60" cy="42" r="4" fill="#1A237E"/><circle cx="61" cy="41" r="1.5" fill="#FFF"/><path d="M46 52 Q 50 58 54 52" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+            const doubleHappyCloud = `<path d="M15 55 A 15 15 0 0 1 15 25 A 20 20 0 0 1 55 20 A 20 20 0 0 1 60 60 Z" fill="url(#cloudGrad)" opacity="0.8"/><path d="M35 65 A 20 20 0 0 1 35 25 A 25 25 0 0 1 80 20 A 25 25 0 0 1 85 70 Z" fill="url(#cloudGrad)"/><circle cx="45" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="75" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="50" cy="42" r="4" fill="#1A237E"/><circle cx="51" cy="41" r="1.5" fill="#FFF"/><circle cx="70" cy="42" r="4" fill="#1A237E"/><circle cx="71" cy="41" r="1.5" fill="#FFF"/><path d="M56 52 Q 60 58 64 52" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+            const cuteGhost = `<path d="M30 85 Q 35 95 40 85 Q 45 95 50 85 Q 55 95 60 85 Q 65 95 70 85 L 70 40 A 20 20 0 0 0 30 40 Z" fill="#FFFFFF" opacity="0.9"/><circle cx="42" cy="45" r="4" fill="#1A237E"/><circle cx="58" cy="45" r="4" fill="#1A237E"/><circle cx="35" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="65" cy="50" r="4" fill="#FF8A80" opacity="0.6"/><path d="M47 55 Q 50 58 53 55" stroke="#1A237E" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M10 70 L 90 70 M 20 80 L 80 80" stroke="#B0BEC5" stroke-width="4" stroke-linecap="round" opacity="0.5"/>`;
+            const happyRainCloud = `<path d="M25 60 A 20 20 0 0 1 25 20 A 25 25 0 0 1 70 15 A 25 25 0 0 1 75 65 Z" fill="url(#cloudGrad)"/><circle cx="35" cy="45" r="4" fill="#FF8A80" opacity="0.6"/><circle cx="65" cy="45" r="4" fill="#FF8A80" opacity="0.6"/><path d="M35 40 Q 40 35 45 40" stroke="#1A237E" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M55 40 Q 60 35 65 40" stroke="#1A237E" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M46 50 Q 50 56 54 50" stroke="#1A237E" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M35 75 L 30 85 M 50 70 L 45 80 M 65 75 L 60 85" stroke="url(#waterGrad)" stroke-width="4" stroke-linecap="round"/>`;
+            const angryThunderCloud = `<path d="M25 60 A 20 20 0 0 1 25 20 A 25 25 0 0 1 70 15 A 25 25 0 0 1 75 65 Z" fill="#78909C"/><path d="M35 38 L 45 42" stroke="#1A237E" stroke-width="3" stroke-linecap="round"/><path d="M65 38 L 55 42" stroke="#1A237E" stroke-width="3" stroke-linecap="round"/><circle cx="42" cy="45" r="3" fill="#1A237E"/><circle cx="58" cy="45" r="3" fill="#1A237E"/><path d="M45 55 Q 50 50 55 55" stroke="#1A237E" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M45 60 L 35 78 L 48 78 L 40 95 L 65 70 L 50 70 Z" fill="url(#lightningGrad)"/>`;
+            const happySunCloud = `<circle cx="25" cy="25" r="18" fill="url(#sunGrad)"/>` + happyCloud;
+            const happyMoonCloud = `<path d="M35 15 A 15 15 0 1 0 20 40 A 18 18 0 1 1 35 15 Z" fill="url(#moonGrad)"/>` + happyCloud;
 
-            if (wmoCode <= 1) {
-                if (isNight) return svgStart + moonSleep + svgEnd;
-                if (temp > 28) return svgStart + sunGlasses + svgEnd;
-                if (temp < 0) return svgStart + penguin + svgEnd;
-                return svgStart + sunSmile + svgEnd;
+            if (isNight) {
+                if (wmoCode <= 1) return svgStart + moonSleep + svgEnd;
+                if (wmoCode === 2) return svgStart + happyMoonCloud + svgEnd;
+                if (wmoCode === 3) return svgStart + doubleHappyCloud + svgEnd;
+                if (wmoCode === 45 || wmoCode === 48) return svgStart + cuteGhost + svgEnd;
+            } else {
+                if (wmoCode <= 1) {
+                    if (temp > 28) return svgStart + sunGlasses + svgEnd;
+                    if (temp < 0) return svgStart + penguin + svgEnd;
+                    return svgStart + sunSmile + svgEnd;
+                }
+                if (wmoCode === 2) return svgStart + happySunCloud + svgEnd;
+                if (wmoCode === 3) return svgStart + doubleHappyCloud + svgEnd;
+                if (wmoCode === 45 || wmoCode === 48) return svgStart + cuteGhost + svgEnd;
             }
-            if (wmoCode === 2) return svgStart + `<path d="M30 65 A 15 15 0 0 1 30 35 A 20 20 0 0 1 70 30 A 20 20 0 0 1 75 70 Z" fill="url(#cloudGrad)" opacity="0.9"/><circle cx="25" cy="25" r="15" fill="url(#sunGrad)"/>` + svgEnd;
-            if (wmoCode < 50) return svgStart + happyCloud + svgEnd;
+            
             if (wmoCode <= 61) return svgStart + duckPuddle + svgEnd;
-            if (wmoCode <= 67) return svgStart + umbrella + svgEnd;
+            if (wmoCode <= 67) return svgStart + happyRainCloud + svgEnd;
             if (wmoCode <= 86) return svgStart + snowman + svgEnd;
-            if (wmoCode >= 95) return svgStart + lightning + svgEnd;
-            return svgStart + happyCloud + svgEnd;
+            if (wmoCode >= 95) return svgStart + angryThunderCloud + svgEnd;
+            
+            return svgStart + doubleHappyCloud + svgEnd;
         }
 
-        // Dospelácke klasické minimalistické ikony
         function getAdultSVG(wmoCode, isNight) {
             const svgStart = `<svg viewBox="0 0 100 100" filter="url(#adultShadow)">`;
             const svgEnd = `</svg>`;
@@ -324,7 +438,11 @@
                     svgStart + `<path d="M55 15 A 35 35 0 1 0 85 75 A 40 40 0 1 1 55 15 Z" fill="url(#moonGrad)"/>` + svgEnd :
                     svgStart + `<circle cx="50" cy="50" r="30" fill="url(#sunGrad)"/><path d="M50 5 L50 15 M50 85 L50 95 M5 50 L15 50 M85 50 L95 50 M18 18 L25 25 M75 75 L82 82 M18 82 L25 75 M75 25 L82 18" stroke="url(#sunGrad)" stroke-width="8" stroke-linecap="round"/>` + svgEnd;
             }
-            if (wmoCode === 2) return svgStart + `<path d="M35 65 A 15 15 0 0 1 35 35 A 20 20 0 0 1 75 30 A 20 20 0 0 1 80 70 Z" fill="url(#cloudGrad)"/><circle cx="30" cy="30" r="15" fill="url(#sunGrad)"/>` + svgEnd;
+            if (wmoCode === 2) {
+                return isNight ? 
+                    svgStart + `<path d="M40 15 A 15 15 0 1 0 25 40 A 18 18 0 1 1 40 15 Z" fill="url(#moonGrad)"/><path d="M35 65 A 15 15 0 0 1 35 35 A 20 20 0 0 1 75 30 A 20 20 0 0 1 80 70 Z" fill="url(#cloudGrad)"/>` + svgEnd :
+                    svgStart + `<circle cx="30" cy="30" r="15" fill="url(#sunGrad)"/><path d="M35 65 A 15 15 0 0 1 35 35 A 20 20 0 0 1 75 30 A 20 20 0 0 1 80 70 Z" fill="url(#cloudGrad)"/>` + svgEnd;
+            }
             if (wmoCode < 50) return svgStart + `<path d="M25 65 A 20 20 0 0 1 25 25 A 25 25 0 0 1 70 20 A 25 25 0 0 1 75 70 Z" fill="url(#cloudGrad)"/>` + svgEnd;
             if (wmoCode <= 67) return svgStart + `<path d="M25 50 A 20 20 0 0 1 25 10 A 25 25 0 0 1 70 5 A 25 25 0 0 1 75 55 Z" fill="url(#cloudGrad)"/><path d="M35 65 L 25 85 M 50 65 L 40 85 M 65 65 L 55 85" stroke="url(#waterGrad)" stroke-width="5" stroke-linecap="round"/>` + svgEnd;
             if (wmoCode <= 86) return svgStart + `<path d="M25 50 A 20 20 0 0 1 25 10 A 25 25 0 0 1 70 5 A 25 25 0 0 1 75 55 Z" fill="url(#cloudGrad)"/><circle cx="35" cy="75" r="4" fill="#FFF"/><circle cx="50" cy="75" r="4" fill="#FFF"/><circle cx="65" cy="75" r="4" fill="#FFF"/>` + svgEnd;
@@ -333,9 +451,21 @@
         }
 
         function getKidMessage(wmoCode, temp, isNight) {
-            if (isNight && wmoCode <= 1) return "Je čas ísť spinkať, dobrú noc!";
+            if (isNight) {
+                if (wmoCode <= 2) return "Hviezdičky svietia, je čas ísť spinkať!";
+                if (wmoCode === 3) return "Mráčiky sa k sebe túlia.";
+                if (wmoCode === 45 || wmoCode === 48) return "Hmla hustá ako mlieko, uuu!";
+                if (wmoCode < 50) return "Mesiačik sa schoval za obláčik, dobrú noc.";
+                if (wmoCode <= 67) return "Vonku prší, pekne sa zakry!";
+                if (wmoCode <= 86) return "Padá sniežik, spinkaj v teplúčku.";
+                if (wmoCode >= 95) return "Búrka vonku, v postieľke si v bezpečí!";
+                return "Dobrú noc a sladké sny!";
+            }
+
             if (wmoCode <= 1) return temp > 28 ? "Veľmi pečie slnko, daj si zmrzlinu!" : (temp < 0 ? "Je zima ako tučniakovi, daj si bundu!" : "Svieti slniečko, môžeš si dať tričko!");
             if (wmoCode === 2) return "Slniečko sa hrá na schovávačku.";
+            if (wmoCode === 3) return "Mráčiky sa k sebe túlia.";
+            if (wmoCode === 45 || wmoCode === 48) return "Hmla hustá ako mlieko, uuu!";
             if (wmoCode < 50) return "Slnko sa schovalo za obláčiky.";
             if (wmoCode <= 61) return "Kvap, kvap. Vezmi si kapucňu.";
             if (wmoCode <= 67) return "Prší! Gumáky a pršiplášť to istia!";
@@ -344,10 +474,8 @@
             return "Pozri von z okna, čo sa deje!";
         }
 
-        // --- 3. NAČÍTANIE POČASIA ---
         async function fetchWeather() {
             try {
-                // Rozšírený dotaz na API o všetky detailné dáta!
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.lat}&longitude=${config.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m,surface_pressure,cloud_cover,visibility,precipitation&hourly=temperature_2m,weather_code&timezone=auto&temperature_unit=${config.units}&wind_speed_unit=kmh&forecast_days=2`;
                 const res = await fetch(url);
                 const data = await res.json();
@@ -361,21 +489,24 @@
                 const isNight = currentHour >= 19 || currentHour < 6;
                 const u = config.units === 'celsius' ? '°C' : '°F';
 
-                // Update Detskej sekcie
-                document.getElementById('kid-icon').innerHTML = getKidSVG(wmo, curTemp, isNight);
+                const kidIcon = document.getElementById('kid-icon');
+                kidIcon.innerHTML = getKidSVG(wmo, curTemp, isNight);
+                kidIcon.dataset.weather = weatherTranslations[wmo] || 'Neznáme'; 
                 document.getElementById('kids-message').textContent = getKidMessage(wmo, curTemp, isNight);
 
-                // Update Dospeláckej sekcie (Základný pohľad)
+                // HLAVNÁ DOSPELÁCKA IKONA JE UŽ VŽDY KLASICKÁ (DOSPELÁCKA)
                 document.getElementById('adult-current-icon').innerHTML = getAdultSVG(wmo, isNight);
+                
                 document.getElementById('adult-desc').textContent = weatherTranslations[wmo] || 'Neznáme';
                 document.getElementById('adult-main-temp').textContent = `${Math.round(curTemp)}${u}`;
-                document.getElementById('adult-feels-like').textContent = `Pocit: ${Math.round(curApparent)}${u}`;
-                // Moderná navigačná šípka (ukazuje smer, KAM vietor fúka)
+                
+                // Pocitová teplota už bez textu "Pocit:", lebo to máme vyriešené v HTML dizajne
+                document.getElementById('adult-feels-like').textContent = `${Math.round(curApparent)}${u}`;
+                
                 const windDir = data.current.wind_direction_10m;
-                const arrowSVG = `<svg width="16" height="16" viewBox="0 0 24 24" style="transform: rotate(${windDir + 180}deg); fill: currentColor; vertical-align: middle; margin-bottom: 3px; margin-right: 3px;"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>`;
-                document.getElementById('adult-wind').innerHTML = `${arrowSVG}${Math.round(windSpeed)} km/h`;
+                const arrowSVG = `<svg viewBox="0 0 24 24" style="width: 1.2em !important; height: 1.2em !important; transform: rotate(${windDir + 180}deg); fill: currentColor; flex-shrink: 0;"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>`;
+                document.getElementById('adult-wind').innerHTML = `${arrowSVG} <span>${Math.round(windSpeed)} km/h</span>`;
 
-                // Update Dospeláckej sekcie (Modálne okno DETAILOV)
                 document.getElementById('det-hum').textContent = `${data.current.relative_humidity_2m} %`;
                 document.getElementById('det-clouds').textContent = `${data.current.cloud_cover} %`;
                 document.getElementById('det-precip').textContent = `${data.current.precipitation} mm`;
@@ -384,11 +515,9 @@
                 document.getElementById('det-gusts').textContent = `${data.current.wind_gusts_10m} km/h`;
                 document.getElementById('det-dir').textContent = getWindDirection(data.current.wind_direction_10m);
                 
-                // Viditeľnosť je zvyčajne v metroch, prevedieme na km
                 const visKm = (data.current.visibility / 1000).toFixed(1);
                 document.getElementById('det-vis').textContent = `${visKm} km`;
 
-                // Predpoveď na +3, +6, +9, +12 hodín
                 const forecasts = [
                     { p: 'f1', idx: currentHour + 3 }, { p: 'f2', idx: currentHour + 6 },
                     { p: 'f3', idx: currentHour + 9 }, { p: 'f4', idx: currentHour + 12 }
@@ -398,13 +527,29 @@
                     const fTime = new Date(data.hourly.time[f.idx]);
                     const fHour = fTime.getHours();
                     const fIsNight = fHour >= 19 || fHour < 6;
-                    document.getElementById(`${f.p}-temp`).textContent = Math.round(data.hourly.temperature_2m[f.idx]) + u;
-                    document.getElementById(`${f.p}-icon`).innerHTML = getAdultSVG(data.hourly.weather_code[f.idx], fIsNight);
+                    const fWmo = data.hourly.weather_code[f.idx];
+                    const fTemp = data.hourly.temperature_2m[f.idx];
+                    
+                    // Výpočet a formátovanie presného času predpovede
+                    let displayHour = fHour;
+                    let displayAmPm = '';
+                    if (config.timeFormat === '12') {
+                        displayAmPm = displayHour >= 12 ? ' PM' : ' AM';
+                        displayHour = displayHour % 12 || 12;
+                    }
+                    document.getElementById(`${f.p}-time`).textContent = `${String(displayHour).padStart(2, '0')}:00${displayAmPm}`;
+                    
+                    document.getElementById(`${f.p}-temp`).textContent = Math.round(fTemp) + u;
+                    
+                    const fIcon = document.getElementById(`${f.p}-icon`);
+                    fIcon.innerHTML = config.iconStyle === 'kids' ? getKidSVG(fWmo, fTemp, fIsNight) : getAdultSVG(fWmo, fIsNight);
+                    fIcon.dataset.weather = weatherTranslations[fWmo] || 'Neznáme'; 
                 });
+                
+                calculateAndApplyScale();
             } catch (err) { console.error(err); }
         }
 
-        // --- 4. HODINY A POHYB ---
         function updateTime() {
             const now = new Date();
             let h = now.getHours(), m = String(now.getMinutes()).padStart(2, '0'), s = String(now.getSeconds()).padStart(2, '0');
@@ -421,10 +566,13 @@
             const rect = widget.getBoundingClientRect();
             const maxX = window.innerWidth - rect.width - 40; 
             const maxY = window.innerHeight - rect.height - 40;
-            widget.style.transform = `translate(${Math.max(20, Math.random() * maxX)}px, ${Math.max(20, Math.random() * maxY)}px)`;
+            
+            const safeX = maxX > 20 ? Math.max(20, Math.random() * maxX) : 20;
+            const safeY = maxY > 20 ? Math.max(20, Math.random() * maxY) : 20;
+            
+            widget.style.transform = `translate(${safeX}px, ${safeY}px)`;
         }
 
-        // --- 5. LOGIKA OKIEN (MODALS) ---
         const settingsBtn = document.getElementById('settings-btn');
         const settingsModal = document.getElementById('settings-modal');
         const detailsModal = document.getElementById('details-modal');
@@ -437,7 +585,20 @@
             settingsModal.style.display = 'none';
             detailsModal.style.display = 'none';
             overlay.style.display = 'none';
+            
+            // Ak užívateľ zavrie okno bez uloženia, vrátime pôvodnú veľkosť
+            let saved = JSON.parse(localStorage.getItem('familyScreensaver'));
+            if(saved && saved.scaleValue !== undefined) {
+                config.scaleValue = saved.scaleValue;
+            }
+            calculateAndApplyScale();
         }
+
+        // Živý náhľad aplikácie pri ťahaní posuvníka
+        document.getElementById('inp-scale').addEventListener('input', function() {
+            config.scaleValue = parseInt(this.value);
+            calculateAndApplyScale();
+        });
 
         document.body.addEventListener('click', () => {
             if (settingsModal.style.display === 'flex' || detailsModal.style.display === 'flex') return;
@@ -446,7 +607,6 @@
             tOut = setTimeout(() => settingsBtn.style.opacity = '0', 4000);
         });
 
-        // Otvorenie detailov o počasí
         adultCurrentBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             detailsModal.style.display = 'flex';
@@ -457,11 +617,14 @@
         closeDetailsBtn.addEventListener('click', closeAllModals);
         overlay.addEventListener('click', closeAllModals);
 
-        // Otvorenie nastavení
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.getElementById('inp-city').value = config.city; document.getElementById('inp-units').value = config.units;
-            document.getElementById('inp-time').value = config.timeFormat; document.getElementById('inp-seconds').checked = config.showSeconds;
+            document.getElementById('inp-city').value = config.city; 
+            document.getElementById('inp-units').value = config.units;
+            document.getElementById('inp-scale').value = config.scaleValue || 50;
+            document.getElementById('inp-icon-style').value = config.iconStyle || 'kids';
+            document.getElementById('inp-time').value = config.timeFormat; 
+            document.getElementById('inp-seconds').checked = config.showSeconds;
             document.getElementById('inp-color').value = config.color;
             settingsModal.style.display = 'flex'; overlay.style.display = 'block'; settingsBtn.style.opacity = '0';
         });
@@ -478,35 +641,29 @@
                     } else { alert('Nenašlo sa.'); document.getElementById('save-btn').textContent = 'Uložiť'; return; }
                 } catch(e) {}
             }
-            config.units = document.getElementById('inp-units').value; config.timeFormat = document.getElementById('inp-time').value;
-            config.showSeconds = document.getElementById('inp-seconds').checked; config.color = document.getElementById('inp-color').value;
+            config.units = document.getElementById('inp-units').value; 
+            config.timeFormat = document.getElementById('inp-time').value;
+            config.scaleValue = parseInt(document.getElementById('inp-scale').value);
+            config.iconStyle = document.getElementById('inp-icon-style').value;
+            config.showSeconds = document.getElementById('inp-seconds').checked; 
+            config.color = document.getElementById('inp-color').value;
             localStorage.setItem('familyScreensaver', JSON.stringify(config));
+            
             applyConfig(); fetchWeather(); closeAllModals(); document.getElementById('save-btn').textContent = 'Uložiť';
         });
 
-        // --- ŠTART ---
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
         widget.style.transition = 'none'; moveWidget(); 
         setTimeout(() => { widget.style.transition = 'transform 60s linear'; moveWidget(); setInterval(moveWidget, 60000); }, 100);
 
-// Funkcia na zapnutie Full Screen režimu
-function requestFullScreen(element) {
-    if (element.requestFullscreen) {
-        element.requestFullscreen();
-    } else if (element.mozRequestFullScreen) { // Firefox
-        element.mozRequestFullScreen();
-    } else if (element.webkitRequestFullscreen) { // Chrome, Safari
-        element.webkitRequestFullscreen();
-    } else if (element.msRequestFullscreen) { // IE/Edge
-        element.msRequestFullscreen();
-    }
-}
+        function requestFullScreen(element) {
+            if (element.requestFullscreen) element.requestFullscreen();
+            else if (element.mozRequestFullScreen) element.mozRequestFullScreen();
+            else if (element.webkitRequestFullscreen) element.webkitRequestFullscreen();
+            else if (element.msRequestFullscreen) element.msRequestFullscreen();
+        }
 
-// Spustenie po prvom kliknutí kamkoľvek na obrazovku
-document.body.addEventListener('click', () => {
-    requestFullScreen(document.documentElement);
-}, { once: true });
-
+        document.body.addEventListener('click', () => { requestFullScreen(document.documentElement); }, { once: true });
     </script>
 </body>
 </html>
