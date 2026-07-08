@@ -488,6 +488,25 @@
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
         widget.style.transition = 'none'; moveWidget(); 
         setTimeout(() => { widget.style.transition = 'transform 60s linear'; moveWidget(); setInterval(moveWidget, 60000); }, 100);
+
+// Funkcia na zapnutie Full Screen režimu
+function requestFullScreen(element) {
+    if (element.requestFullscreen) {
+        element.requestFullscreen();
+    } else if (element.mozRequestFullScreen) { // Firefox
+        element.mozRequestFullScreen();
+    } else if (element.webkitRequestFullscreen) { // Chrome, Safari
+        element.webkitRequestFullscreen();
+    } else if (element.msRequestFullscreen) { // IE/Edge
+        element.msRequestFullscreen();
+    }
+}
+
+// Spustenie po prvom kliknutí kamkoľvek na obrazovku
+document.body.addEventListener('click', () => {
+    requestFullScreen(document.documentElement);
+}, { once: true });
+
     </script>
 </body>
 </html>
