@@ -26,19 +26,25 @@
         #widget-inner {
             display: flex; flex-direction: column; align-items: stretch; gap: 20px;
             transform: scale(var(--widget-scale));
-            transform-origin: top left; /* TOTO je hlavná oprava pre mobily */
-            transition: transform 0.3s ease;
+            transform-origin: top left; /* Matematicky presné zmenšovanie z rohu */
             width: max-content; 
+        }
+
+        /* Smart Layout: Na úzkych obrazovkách (mobil naležato) daj veci vedľa seba */
+        @media (orientation: landscape) and (max-height: 600px) {
+            #widget-inner {
+                flex-direction: row;
+                align-items: center;
+                gap: 50px;
+            }
+            .adults-section { width: auto; }
         }
 
         /* --- KLIKATEĽNÉ IKONY A TOAST --- */
         .clickable-icon {
-            cursor: pointer;
-            transition: transform 0.2s ease;
+            cursor: pointer; transition: transform 0.2s ease;
         }
-        .clickable-icon:active {
-            transform: scale(0.9);
-        }
+        .clickable-icon:active { transform: scale(0.9); }
 
         #toast {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -48,102 +54,79 @@
             border: 2px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        #toast.show {
-            opacity: 1; transform: translateX(-50%) translateY(0);
-        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         /* --- DETSKÁ ZÓNA --- */
-        /* Zabezpečí preklopenie blokov vedľa seba, keď otočíš telefón na šírku */
-        @media (max-height: 600px) and (orientation: landscape) {
-            #widget-inner {
-                flex-direction: row !important;
-                align-items: center !important;
-                gap: 50px !important;
-            }
-            .adults-section {
-                width: auto !important;
-            }
-        }
-
         .kids-section {
             display: flex; flex-direction: column; align-items: stretch; gap: 15px;
         }
         .main-display {
-            /* Jednotky vw sú nahradené. O bezchybné zväčšenie/zmenšenie sa už stará len JS scaler */
             display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 40px;
         }
         #kid-icon {
-            width: 200px; height: 200px; 
+            width: 220px; height: 220px; 
             flex-shrink: 0; display: block;
             filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.8));
         }
-        #kid-icon svg {
-            width: 100%; height: 100%; display: block; overflow: visible;
-        }
-        #time-container {
-            display: flex; align-items: baseline; gap: 15px;
-        }
+        #kid-icon svg { width: 100%; height: 100%; display: block; overflow: visible; }
+        #time-container { display: flex; align-items: baseline; gap: 15px; }
+        
+        /* Zjemnený font času a väčšie sekundy v pevných jednotkách pre presné meranie */
         #time { 
-            font-size: 18rem; 
+            font-size: 20rem; 
             font-weight: 700; letter-spacing: 2px; 
             text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 0.85;
         }
         #seconds, #ampm { font-size: 6rem; font-weight: 700; opacity: 0.6; display: none; }
         
         .kids-message-box {
-            background: rgba(255, 255, 255, 0.1); padding: 15px 40px; align-self: center;
+            background: rgba(255, 255, 255, 0.1); padding: 20px 50px; align-self: center;
             border-radius: 50px; border: 3px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px); text-align: center;
         }
-        #kids-message { font-size: 2.5rem; font-weight: 700; }
+        #kids-message { font-size: 2.8rem; font-weight: 700; }
 
         /* --- ZÓNA PRE DOSPELÝCH --- */
         .adults-section {
             display: flex; align-items: center; justify-content: space-between; 
-            width: 100%; box-sizing: border-box; 
-            gap: 30px;
-            background: rgba(30, 30, 30, 0.6); padding: 25px 40px; 
-            border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 100%; box-sizing: border-box; gap: 30px;
+            background: rgba(30, 30, 30, 0.6); padding: 30px 45px; 
+            border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
         
         .adult-current {
-            display: flex; align-items: center; gap: 25px;
-            border-right: 1px solid rgba(255,255,255,0.2); padding-right: 35px;
+            display: flex; align-items: center; gap: 30px;
+            border-right: 1px solid rgba(255,255,255,0.2); padding-right: 40px;
             cursor: pointer; transition: transform 0.2s, background 0.2s;
             border-radius: 20px; padding-left: 10px;
         }
-        .adult-current:hover {
-            transform: scale(1.02); background: rgba(255,255,255,0.05);
-        }
+        .adult-current:hover { transform: scale(1.02); background: rgba(255,255,255,0.05); }
 
-        .adult-current-icon { width: 120px; height: 120px; flex-shrink: 0; }
+        .adult-current-icon { width: 140px; height: 140px; flex-shrink: 0; }
         .adult-current-icon svg { width: 100%; height: 100%; overflow: visible; }
         
         .adult-details { display: flex; flex-direction: column; justify-content: center; gap: 0px; }
         
-        /* Nové rozloženie: Popis + Vietor v jednom riadku */
         .desc-wind-row { display: flex; align-items: center; gap: 20px; margin-bottom: 5px; }
-        #adult-desc { font-size: 1.8rem; font-weight: 900; color: #E0E0E0; line-height: 1.2; }
-        #adult-wind { font-size: 1.3rem; font-weight: 700; color: #90CAF9; display: flex; align-items: center; gap: 6px; }
+        #adult-desc { font-size: 2rem; font-weight: 900; color: #E0E0E0; line-height: 1.2; }
+        #adult-wind { font-size: 1.5rem; font-weight: 700; color: #90CAF9; display: flex; align-items: center; gap: 6px; }
         
-        /* Nové rozloženie: Teplota + Stĺpec s pocitom */
         .temp-row { display: flex; align-items: center; gap: 15px; margin: 2px 0 5px 0;}
-        #adult-main-temp { font-size: 5.5rem; font-weight: 900; line-height: 0.8; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
+        #adult-main-temp { font-size: 6rem; font-weight: 900; line-height: 0.8; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
         
         .feels-like-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .feels-label { font-size: 1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; margin-bottom: -4px; z-index: 1;}
+        .feels-label { font-size: 1.1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; margin-bottom: -4px; z-index: 1;}
         #adult-feels-like { font-size: 3.5rem; font-weight: 700; color: #B0BEC5; line-height: 1;}
         
-        #adult-city { font-size: 1.1rem; color: #757575; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; margin-top: 5px;}
+        #adult-city { font-size: 1.3rem; color: #757575; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; margin-top: 5px;}
 
-        /* Opravené gigantické ikony pre predpoveď */
         .adult-forecast { display: flex; justify-content: space-between; flex: 1; margin-left: 15px; gap: 15px; }
         .forecast-item { 
             display: flex; flex-direction: column; align-items: center; 
-            font-size: 1.5rem; font-weight: 700; color: #B0BEC5; gap: 10px; width: 100%;
+            font-size: 1.6rem; font-weight: 700; color: #B0BEC5; gap: 10px; width: 100%;
         }
-        .forecast-icon { width: 100%; max-width: 85px; height: 85px; display: flex; justify-content: center; align-items: center; }
+        .forecast-icon { width: 100%; max-width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; }
         .forecast-icon svg { width: 100%; height: 100%; overflow: visible; }
         
         /* --- NASTAVENIA A MODÁLNE OKNÁ --- */
@@ -171,20 +154,10 @@
         .detail-value { font-size: 1.3rem; font-weight: 900; color: #E0E0E0; margin-top: 2px; }
 
         .setting-row { display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; }
-        input[type="text"], select { 
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); 
-            color: white; padding: 8px; border-radius: 8px; outline: none; width: 140px;
-        }
+        input[type="text"], select { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px; border-radius: 8px; outline: none; width: 140px; }
         input[type="range"] { width: 140px; }
-        
-        .btn-primary {
-            margin-top: 15px; background: #FF9800; color: white; border: none; padding: 12px;
-            border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; text-align: center;
-        }
-        #modal-overlay {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.7); z-index: 50; display: none; pointer-events: auto;
-        }
+        .btn-primary { margin-top: 15px; background: #FF9800; color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; text-align: center; }
+        #modal-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 50; display: none; pointer-events: auto; }
     </style>
 </head>
 <body>
@@ -225,12 +198,10 @@
                 <div class="adult-current" id="adult-current-btn" title="Klikni pre detaily">
                     <div id="adult-current-icon" class="adult-current-icon"></div>
                     <div class="adult-details">
-                        
                         <div class="desc-wind-row">
                             <span id="adult-desc">Načítavam...</span>
                             <div id="adult-wind">💨 -- km/h</div>
                         </div>
-                        
                         <div class="temp-row">
                             <span id="adult-main-temp">--°</span>
                             <div class="feels-like-col">
@@ -238,7 +209,6 @@
                                 <span id="adult-feels-like">--°</span>
                             </div>
                         </div>
-                        
                         <span id="adult-city">Mesto</span>
                     </div>
                 </div>
@@ -355,35 +325,55 @@
             });
         });
 
+        // -----------------------------------------------------
+        // SMART LAYOUT ENGINE: Inteligentné meranie displeja
+        // -----------------------------------------------------
         function calculateAndApplyScale() {
+            const widget = document.getElementById('widget');
             const inner = document.getElementById('widget-inner');
-            const rect = inner.getBoundingClientRect();
             
-            const currentScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--widget-scale')) || 1;
-            const safeCurrentScale = currentScale > 0.1 ? currentScale : 1;
+            // 1. Zastavíme pomalé animácie pre okamžitý prepočet
+            widget.style.transition = 'none';
             
-            const unscaledWidth = rect.width / safeCurrentScale;
-            const unscaledHeight = rect.height / safeCurrentScale;
+            // 2. Vynulujeme scale, aby sme odmerali skutočnú veľkosť vnútorného bloku v pixeloch
+            document.documentElement.style.setProperty('--widget-scale', 1);
+            void inner.offsetWidth; // Vynútenie okamžitého reflow v prehliadači
             
-            const availW = window.innerWidth - 60;
-            const availH = window.innerHeight - 60;
+            const unscaledW = inner.offsetWidth;
+            const unscaledH = inner.offsetHeight;
             
-            const maxScaleX = availW / unscaledWidth;
-            const maxScaleY = availH / unscaledHeight;
-            const maxSafeScale = Math.min(maxScaleX, maxScaleY);
+            // 3. Zistíme, koľko priestoru máme na obrazovke (-40px pre bezpečný okraj)
+            const availW = window.innerWidth - 40;
+            const availH = window.innerHeight - 40;
             
-            const minScale = 0.3; 
-            const safeMax = Math.max(minScale, maxSafeScale);
+            // 4. Vypočítame absolútne "bezpečné maximum" = aby widget nenarazil do stien
+            let maxSafeScale = Math.min(availW / unscaledW, availH / unscaledH);
+            if(maxSafeScale < 0.2) maxSafeScale = 0.5; // Ochrana pre miniatúrne displeje
             
+            // 5. Prepočet z posuvníka (10% až 100%) na reálnu mierku
             const val = config.scaleValue !== undefined ? config.scaleValue : 50;
-            const percentage = (val - 10) / 90; 
-            const actualScale = minScale + (percentage * (safeMax - minScale));
+            const percentage = val / 100;
+            const minScale = 0.2; 
             
+            const actualScale = minScale + (percentage * (maxSafeScale - minScale));
+            
+            // 6. Aplikujeme presne vypočítanú mierku
             document.documentElement.style.setProperty('--widget-scale', actualScale);
-            moveWidget(); 
+            
+            // 7. Hneď posunieme widget na bezpečnú pozíciu podľa nových rozmerov
+            moveWidget();
+            
+            // 8. Po malej pauze znovu zapneme pomalý pohyb (60s prechod)
+            setTimeout(() => {
+                widget.style.transition = 'transform 60s linear';
+            }, 50);
         }
 
-        window.addEventListener('resize', calculateAndApplyScale);
+        // Ak užívateľ otočí telefón, prepočítame veľkosť znova
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(calculateAndApplyScale, 100);
+        });
 
         function getWindDirection(degree) {
             const directions = ['S (Sever)', 'SV', 'V (Východ)', 'JV', 'J (Juh)', 'JZ', 'Z (Západ)', 'SZ'];
@@ -506,13 +496,10 @@
                 kidIcon.dataset.weather = weatherTranslations[wmo] || 'Neznáme'; 
                 document.getElementById('kids-message').textContent = getKidMessage(wmo, curTemp, isNight);
 
-                // HLAVNÁ DOSPELÁCKA IKONA JE UŽ VŽDY KLASICKÁ (DOSPELÁCKA)
                 document.getElementById('adult-current-icon').innerHTML = getAdultSVG(wmo, isNight);
                 
                 document.getElementById('adult-desc').textContent = weatherTranslations[wmo] || 'Neznáme';
                 document.getElementById('adult-main-temp').textContent = `${Math.round(curTemp)}${u}`;
-                
-                // Pocitová teplota už bez textu "Pocit:", lebo to máme vyriešené v HTML dizajne
                 document.getElementById('adult-feels-like').textContent = `${Math.round(curApparent)}${u}`;
                 
                 const windDir = data.current.wind_direction_10m;
@@ -537,20 +524,17 @@
 
                 forecasts.forEach(f => {
                     const fTime = new Date(data.hourly.time[f.idx]);
-                    const fHour = fTime.getHours();
-                    const fIsNight = fHour >= 19 || fHour < 6;
+                    let displayHour = fTime.getHours();
+                    const fIsNight = displayHour >= 19 || displayHour < 6;
                     const fWmo = data.hourly.weather_code[f.idx];
                     const fTemp = data.hourly.temperature_2m[f.idx];
                     
-                    // Výpočet a formátovanie presného času predpovede
-                    let displayHour = fHour;
                     let displayAmPm = '';
                     if (config.timeFormat === '12') {
                         displayAmPm = displayHour >= 12 ? ' PM' : ' AM';
                         displayHour = displayHour % 12 || 12;
                     }
                     document.getElementById(`${f.p}-time`).textContent = `${String(displayHour).padStart(2, '0')}:00${displayAmPm}`;
-                    
                     document.getElementById(`${f.p}-temp`).textContent = Math.round(fTemp) + u;
                     
                     const fIcon = document.getElementById(`${f.p}-icon`);
@@ -573,16 +557,27 @@
             if(config.showSeconds) document.getElementById('seconds').textContent = s;
         }
 
-        const widget = document.getElementById('widget');
+        // Matematicky presné a bezpečné presúvanie widgetu po obrazovke (Screensaver)
         function moveWidget() {
-            // Musíme merať widget-inner, lebo ten má v sebe scale a povie nám reálnu veľkosť!
-            const innerRect = document.getElementById('widget-inner').getBoundingClientRect();
+            const widget = document.getElementById('widget');
+            const inner = document.getElementById('widget-inner');
             
-            const maxX = window.innerWidth - innerRect.width - 40; 
-            const maxY = window.innerHeight - innerRect.height - 40;
+            const unscaledW = inner.offsetWidth;
+            const unscaledH = inner.offsetHeight;
             
-            const safeX = maxX > 20 ? Math.max(20, Math.random() * maxX) : 20;
-            const safeY = maxY > 20 ? Math.max(20, Math.random() * maxY) : 20;
+            const currentScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--widget-scale')) || 1;
+            
+            const actualW = unscaledW * currentScale;
+            const actualH = unscaledH * currentScale;
+            
+            const maxX = window.innerWidth - actualW - 40; 
+            const maxY = window.innerHeight - actualH - 40;
+            
+            const safeMaxX = Math.max(20, maxX);
+            const safeMaxY = Math.max(20, maxY);
+            
+            const safeX = 20 + Math.random() * (safeMaxX - 20);
+            const safeY = 20 + Math.random() * (safeMaxY - 20);
             
             widget.style.transform = `translate(${safeX}px, ${safeY}px)`;
         }
@@ -600,19 +595,13 @@
             detailsModal.style.display = 'none';
             overlay.style.display = 'none';
             
-            // Ak užívateľ zavrie okno bez uloženia, vrátime pôvodnú veľkosť
+            // Reštart mierky, ak sa okno zavrelo bez uloženia
             let saved = JSON.parse(localStorage.getItem('familyScreensaver'));
             if(saved && saved.scaleValue !== undefined) {
                 config.scaleValue = saved.scaleValue;
             }
             calculateAndApplyScale();
         }
-
-        // Živý náhľad aplikácie pri ťahaní posuvníka
-        document.getElementById('inp-scale').addEventListener('input', function() {
-            config.scaleValue = parseInt(this.value);
-            calculateAndApplyScale();
-        });
 
         document.body.addEventListener('click', () => {
             if (settingsModal.style.display === 'flex' || detailsModal.style.display === 'flex') return;
@@ -643,6 +632,12 @@
             settingsModal.style.display = 'flex'; overlay.style.display = 'block'; settingsBtn.style.opacity = '0';
         });
 
+        // Živý náhľad veľkosti pri potiahnutí posuvníka
+        document.getElementById('inp-scale').addEventListener('input', function() {
+            config.scaleValue = parseInt(this.value);
+            calculateAndApplyScale();
+        });
+
         document.getElementById('save-btn').addEventListener('click', async () => {
             const nCity = document.getElementById('inp-city').value;
             if(nCity.toLowerCase() !== config.city.toLowerCase()) {
@@ -667,8 +662,7 @@
         });
 
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
-        widget.style.transition = 'none'; moveWidget(); 
-        setTimeout(() => { widget.style.transition = 'transform 60s linear'; moveWidget(); setInterval(moveWidget, 60000); }, 100);
+        setTimeout(() => { document.getElementById('widget').style.transition = 'transform 60s linear'; moveWidget(); setInterval(moveWidget, 60000); }, 100);
 
         function requestFullScreen(element) {
             if (element.requestFullscreen) element.requestFullscreen();
