@@ -85,6 +85,17 @@
             filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.8));
         }
         #kid-icon svg { width: 100%; height: 100%; display: block; overflow: visible; }
+        .time-block { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; margin-top: 10px; }
+        #date-display { 
+            font-size: 2.5rem; 
+            font-weight: 800; 
+            color: #B0BEC5; 
+            text-transform: uppercase; 
+            letter-spacing: 3px; 
+            margin-bottom: 5px; 
+            margin-left: 10px;
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.5); 
+        }
         #time-container { display: flex; align-items: baseline; gap: 15px; }
         
         /* Zjemnený font času a väčšie sekundy v pevných jednotkách pre presné meranie */
@@ -94,7 +105,8 @@
             letter-spacing: 2px; 
             text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 0.85;
         }
-        #seconds, #ampm { font-size: 6rem; font-weight: 400; opacity: 0.6; display: none; }
+        #seconds { font-size: 15rem; font-weight: 400; opacity: 0.6; display: none; }
+        #ampm { font-size: 6rem; font-weight: 400; opacity: 0.6; display: none; }
         
         .kids-message-box {
             background: rgba(255, 255, 255, 0.1); padding: 20px 50px; align-self: center;
@@ -287,10 +299,13 @@
             <div class="kids-section">
                 <div class="main-display">
                     <div id="kid-icon" class="clickable-icon"></div>
-                    <div id="time-container">
-                        <div id="time">00:00</div>
-                        <div id="seconds">00</div>
-                        <div id="ampm">AM</div>
+                    <div class="time-block">
+                        <div id="date-display">--</div>
+                        <div id="time-container">
+                            <div id="time">00:00</div>
+                            <div id="seconds">00</div>
+                            <div id="ampm">AM</div>
+                        </div>
                     </div>
                 </div>
                 <div class="kids-message-box">
@@ -696,12 +711,19 @@
         function updateTime() {
             const now = new Date();
             let h = now.getHours(), m = String(now.getMinutes()).padStart(2, '0'), s = String(now.getSeconds()).padStart(2, '0');
+            
             if (config.timeFormat === '12') {
                 document.getElementById('ampm').textContent = h >= 12 ? 'PM' : 'AM';
                 h = h % 12 || 12;
             }
+            
             document.getElementById('time').textContent = `${String(h).padStart(2, '0')}:${m}`;
             if(config.showSeconds) document.getElementById('seconds').textContent = s;
+            
+            // Aktualizácia dátumu s rokom
+            const days = ['Nedeľa', 'Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota'];
+            const months = ['január', 'február', 'marec', 'apríl', 'máj', 'jún', 'júl', 'august', 'september', 'október', 'november', 'december'];
+            document.getElementById('date-display').textContent = `${days[now.getDay()]}, ${now.getDate()}. ${months[now.getMonth()]} ${now.getFullYear()}`;
             
             // Pri každej sekunde skontrolujeme a prípadne upravíme jas podľa rozvrhu
             updateBrightnessByTime();
