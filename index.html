@@ -350,45 +350,40 @@
         // -----------------------------------------------------
         // SMART LAYOUT ENGINE: Inteligentné meranie displeja
         // -----------------------------------------------------
+        let transitionTimeout; 
+        
         function calculateAndApplyScale() {
             const widget = document.getElementById('widget');
             const inner = document.getElementById('widget-inner');
             
-            // 1. Zastavíme pomalé animácie pre okamžitý prepočet
+            clearTimeout(transitionTimeout);
             widget.style.transition = 'none';
             
-            // 2. Vynulujeme scale, aby sme odmerali skutočnú veľkosť vnútorného bloku v pixeloch
             document.documentElement.style.setProperty('--widget-scale', 1);
-            void inner.offsetWidth; // Vynútenie okamžitého reflow v prehliadači
+            void inner.offsetWidth; 
             
             const unscaledW = inner.offsetWidth;
             const unscaledH = inner.offsetHeight;
             
-            // 3. Zistíme, koľko priestoru máme na obrazovke (-40px pre bezpečný okraj)
             const availW = window.innerWidth - 40;
             const availH = window.innerHeight - 40;
             
-            // 4. Vypočítame absolútne "bezpečné maximum" = aby widget nenarazil do stien
             let maxSafeScale = Math.min(availW / unscaledW, availH / unscaledH);
-            if(maxSafeScale < 0.2) maxSafeScale = 0.5; // Ochrana pre miniatúrne displeje
             
-            // 5. Prepočet z posuvníka (10% až 100%) na reálnu mierku
             const val = config.scaleValue !== undefined ? config.scaleValue : 50;
             const percentage = val / 100;
-            const minScale = 0.2; 
+            
+            const minScale = Math.min(0.2, maxSafeScale); 
             
             const actualScale = minScale + (percentage * (maxSafeScale - minScale));
             
-            // 6. Aplikujeme presne vypočítanú mierku
             document.documentElement.style.setProperty('--widget-scale', actualScale);
             
-            // 7. Hneď posunieme widget na bezpečnú pozíciu podľa nových rozmerov
             moveWidget();
             
-            // 8. Po malej pauze znovu zapneme pomalý pohyb (60s prechod)
-            setTimeout(() => {
+            transitionTimeout = setTimeout(() => {
                 widget.style.transition = 'transform 60s linear';
-            }, 50);
+            }, 100);
         }
 
         // Ak užívateľ otočí telefón, prepočítame veľkosť znova
@@ -579,7 +574,10 @@
             if(config.showSeconds) document.getElementById('seconds').textContent = s;
         }
 
-        // Matematicky presné a bezpečné presúvanie widgetu po obrazovke (Screensaver)
+        // Globálna poistka: pri štarte drží widget v strede
+        let isFirstLoad = true;
+
+        // Matematicky presné presúvanie widgetu (na stred pri štarte, neskôr náhodne)
         function moveWidget() {
             const widget = document.getElementById('widget');
             const inner = document.getElementById('widget-inner');
@@ -592,14 +590,23 @@
             const actualW = unscaledW * currentScale;
             const actualH = unscaledH * currentScale;
             
-            const maxX = window.innerWidth - actualW - 40; 
-            const maxY = window.innerHeight - actualH - 40;
+            let safeX, safeY;
             
-            const safeMaxX = Math.max(20, maxX);
-            const safeMaxY = Math.max(20, maxY);
-            
-            const safeX = 20 + Math.random() * (safeMaxX - 20);
-            const safeY = 20 + Math.random() * (safeMaxY - 20);
+            if (isFirstLoad) {
+                // Pri prvom zobrazení umiestni widget dokonale do stredu obrazovky
+                safeX = (window.innerWidth - actualW) / 2;
+                safeY = (window.innerHeight - actualH) / 2;
+            } else {
+                // Po uplynutí minúty začne klasický šetrič obrazovky na náhodné pozície
+                const maxX = window.innerWidth - actualW - 40; 
+                const maxY = window.innerHeight - actualH - 40;
+                
+                const safeMaxX = Math.max(20, maxX);
+                const safeMaxY = Math.max(20, maxY);
+                
+                safeX = 20 + Math.random() * (safeMaxX - 20);
+                safeY = 20 + Math.random() * (safeMaxY - 20);
+            }
             
             widget.style.transform = `translate(${safeX}px, ${safeY}px)`;
         }
@@ -684,7 +691,17 @@
         });
 
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
-        setTimeout(() => { document.getElementById('widget').style.transition = 'transform 60s linear'; moveWidget(); setInterval(moveWidget, 60000); }, 100);
+        
+        setTimeout(() => { 
+            document.getElementById('widget').style.transition = 'transform 60s linear'; 
+            moveWidget(); 
+            
+            // Časovač šetriča: po 60 sekundách v strede dovolí aplikácii jemný pohyb
+            setInterval(() => {
+                isFirstLoad = false; 
+                moveWidget();
+            }, 60000); 
+        }, 100);
 
         function requestFullScreen(element) {
             if (element.requestFullscreen) element.requestFullscreen();
@@ -785,7 +802,7 @@
                 console.error("Chyba inicializácie senzora: ", e);
             }
         }
-
+        if (document.fonts) { document.fonts.ready.then(calculateAndApplyScale); }
     </script>
 </body>
 </html>
