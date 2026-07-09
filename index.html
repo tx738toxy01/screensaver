@@ -19,14 +19,14 @@
         }
 
         #widget {
-            position: absolute; display: flex; flex-direction: column;
-            align-items: center; pointer-events: auto;
+            position: absolute; top: 0; left: 0;
+            pointer-events: auto;
         }
         
         #widget-inner {
             display: flex; flex-direction: column; align-items: stretch; gap: 20px;
             transform: scale(var(--widget-scale));
-            transform-origin: center center;
+            transform-origin: top left; /* TOTO je hlavná oprava pre mobily */
             transition: transform 0.3s ease;
             width: max-content; 
         }
@@ -575,9 +575,11 @@
 
         const widget = document.getElementById('widget');
         function moveWidget() {
-            const rect = widget.getBoundingClientRect();
-            const maxX = window.innerWidth - rect.width - 40; 
-            const maxY = window.innerHeight - rect.height - 40;
+            // Musíme merať widget-inner, lebo ten má v sebe scale a povie nám reálnu veľkosť!
+            const innerRect = document.getElementById('widget-inner').getBoundingClientRect();
+            
+            const maxX = window.innerWidth - innerRect.width - 40; 
+            const maxY = window.innerHeight - innerRect.height - 40;
             
             const safeX = maxX > 20 ? Math.max(20, Math.random() * maxX) : 20;
             const safeY = maxY > 20 ? Math.max(20, Math.random() * maxY) : 20;
