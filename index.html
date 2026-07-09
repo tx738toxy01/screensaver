@@ -147,8 +147,6 @@
         .feels-like-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
         .feels-label { font-size: 1.1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; margin-bottom: -4px; z-index: 1;}
         #adult-feels-like { font-size: 3.5rem; font-weight: 700; color: #B0BEC5; line-height: 1;}
-        
-        #adult-sensor { font-size: 1rem; color: #9E9E9E; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-top: 2px;}
 
         .adult-forecast { display: flex; justify-content: space-between; flex: 1; margin-left: 15px; gap: 15px; }
         .forecast-item { 
@@ -329,7 +327,6 @@
                             </div>
                         </div>
                         <span id="adult-city">Mesto</span>
-                        <span id="adult-sensor">Senzor svetla: -- lux</span>
                     </div>
                 </div>
                 
@@ -968,7 +965,6 @@
         startScreen.addEventListener('click', () => { 
             requestFullScreen(document.documentElement); 
             keepScreenAwake();
-            startAmbientLightSensor(); 
             
             // Plynulé zmiznutie štartovacej obrazovky
             startScreen.style.opacity = '0';
@@ -978,69 +974,6 @@
                 calculateAndApplyScale();
             }, 500);
         });
-
-        // --- AUTOBRIGHTNESS (Senzor okolitého svetla) ---
-        function startAmbientLightSensor() {
-            const sensorStatus = document.getElementById('adult-sensor');
-            try {
-                if ('AmbientLightSensor' in window) {
-                    navigator.permissions.query({ name: 'ambient-light-sensor' }).then(result => {
-                        if (result.state === 'granted') {
-                            initSensor();
-                        } else if (result.state === 'prompt') {
-                            sensorStatus.textContent = "Senzor svetla: Pripravujem...";
-                            initSensor(); 
-                        } else if (result.state === 'denied') {
-                            sensorStatus.textContent = "Senzor svetla: Zablokovaný v prehliadači";
-                        }
-                    }).catch(err => {
-                        sensorStatus.textContent = "Senzor svetla: Chyba povolení";
-                    });
-                } else {
-                    sensorStatus.textContent = "Senzor svetla: Prehliadač nepodporuje";
-                }
-            } catch (err) {
-                sensorStatus.textContent = "Senzor svetla: Nedostupný";
-            }
-        }
-
-        function initSensor() {
-            const sensorStatus = document.getElementById('adult-sensor');
-            try {
-                const sensor = new AmbientLightSensor();
-                const minJas = 0.1; 
-                const maxLux = 100;  
-
-                document.body.style.transition = 'filter 1s ease-out'; 
-
-                sensor.addEventListener('reading', () => {
-                    let lux = sensor.illuminance;
-                    
-                    // Zápis luxov pod mesto
-                    sensorStatus.textContent = `Senzor svetla: ${Math.round(lux)} lux`;
-                    
-                    let brightness = minJas + ((lux / maxLux) * (1 - minJas));
-                    if (brightness > 1) brightness = 1;
-                    if (brightness < minJas) brightness = minJas;
-                    
-                    document.body.style.filter = `brightness(${brightness})`;
-                });
-
-                sensor.addEventListener('error', event => {
-                    if (event.error.name === 'NotAllowedError') {
-                        sensorStatus.textContent = "Senzor svetla: Blokovaný";
-                    } else if (event.error.name === 'NotReadableError') {
-                        sensorStatus.textContent = "Senzor svetla: Nemôžem prečítať dáta";
-                    } else {
-                        sensorStatus.textContent = "Senzor svetla: Zlyhal";
-                    }
-                });
-
-                sensor.start();
-            } catch (e) {
-                sensorStatus.textContent = "Senzor svetla: Chyba spustenia";
-            }
-        }
 
         if (document.fonts) { document.fonts.ready.then(calculateAndApplyScale); }
     </script>
