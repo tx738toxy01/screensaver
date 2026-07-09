@@ -671,7 +671,32 @@
             else if (element.msRequestFullscreen) element.msRequestFullscreen();
         }
 
-        document.body.addEventListener('click', () => { requestFullScreen(document.documentElement); }, { once: true });
+        // --- WAKE LOCK API (Zabráni vypnutiu displeja na Androide/iOS) ---
+        let wakeLock = null;
+        
+        async function keepScreenAwake() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Displej zostane zapnutý.');
+                }
+            } catch (err) {
+                console.error('Nepodarilo sa udržať displej zapnutý:', err);
+            }
+        }
+
+        // Ak appku zhodíš na pozadie a znovu otvoríš, musíme znova "zobudiť" displej
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                keepScreenAwake();
+            }
+        });
+
+        // Spustenie Full Screenu a Wake Locku po prvom ťuknutí na obrazovku
+        document.body.addEventListener('click', () => { 
+            requestFullScreen(document.documentElement); 
+            keepScreenAwake();
+        }, { once: true });
     </script>
 </body>
 </html>
