@@ -735,43 +735,54 @@
             try {
                 if ('AmbientLightSensor' in window) {
                     navigator.permissions.query({ name: 'ambient-light-sensor' }).then(result => {
-                        if (result.state === 'granted' || result.state === 'prompt') {
-                            const sensor = new AmbientLightSensor();
-                            
-                            // NASTAVENIA JASU:
-                            const minJas = 0.1; // Pri 0 luxoch stmavne aplikácia na 10% (0.0 je úplná tma)
-                            const maxLux = 100;  // Pri 100 luxoch a viac (bežná izba) bude jas 100%
-
-                            document.body.style.transition = 'filter 1s ease-out'; // Plynulý prechod stmievania
-
-                            sensor.addEventListener('reading', () => {
-                                let lux = sensor.illuminance;
-                                
-                                // Matematika na výpočet plynulého prechodu jasu
-                                let brightness = minJas + ((lux / maxLux) * (1 - minJas));
-                                
-                                // Zabezpečíme, že jas neprekročí 100 % (1) a neklesne pod minimum
-                                if (brightness > 1) brightness = 1;
-                                if (brightness < minJas) brightness = minJas;
-                                
-                                // Aplikujeme stmavovací filter na celú stránku
-                                document.body.style.filter = `brightness(${brightness})`;
-                            });
-
-                            sensor.addEventListener('error', event => {
-                                console.warn('Senzor jasu narazil na chybu:', event.error.name);
-                            });
-
-                            sensor.start();
+                        if (result.state === 'granted') {
+                            initSensor();
+                        } else if (result.state === 'prompt') {
+                            showToast("Pokúšam sa spustiť senzor jasu...");
+                            initSensor(); 
+                        } else if (result.state === 'denied') {
+                            alert('Senzor svetla je zablokovaný. Povoľ ho v nastaveniach prehliadača (Ikonka zámku v paneli s adresou -> Povolenia).');
                         }
                     }).catch(err => {
                         console.warn('Nepodarilo sa overiť povolenia pre senzor jasu.', err);
                     });
                 } else {
-                    console.warn('Tento prehliadač nepodporuje senzor okolitého svetla.');
+                    alert('Prehliadač nepodporuje senzor svetla (časté u Safari/iOS). Stmievanie v tme nebude fungovať. Skús v chrome://flags zapnúť Experimental Web Platform features.');
                 }
             } catch (err) {
                 console.error('Senzor svetla nie je dostupný:', err);
+            }
+        }
+
+        function initSensor() {
+            try {
+                const sensor = new AmbientLightSensor();
+                const minJas = 0.1; 
+                const maxLux = 100;  
+
+                document.body.style.transition = 'filter 1s ease-out'; 
+
+                sensor.addEventListener('reading', () => {
+                    let lux = sensor.illuminance;
+                    let brightness = minJas + ((lux / maxLux) * (1 - minJas));
+                    
+                    if (brightness > 1) brightness = 1;
+                    if (brightness < minJas) brightness = minJas;
+                    
+                    document.body.style.filter = `brightness(${brightness})`;
+                });
+
+                sensor.addEventListener('error', event => {
+                    if (event.error.name === 'NotAllowedError') {
+                        alert('Prístup k senzoru bol zamietnutý. Prehliadač ho blokuje.');
+                    } else if (event.error.name === 'NotReadableError') {
+                        console.warn('Senzor je momentálne nedostupný.');
+                    }
+                });
+
+                sensor.start();
+            } catch (e) {
+                console.error("Chyba inicializácie senzora: ", e);
             }
         }
 
