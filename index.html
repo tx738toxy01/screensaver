@@ -781,6 +781,10 @@
 
                 sensor.addEventListener('reading', () => {
                     let lux = sensor.illuminance;
+                    
+                    // TEST: Vypíše aktuálne luxy priamo tam, kde býva názov mesta
+                    document.getElementById('adult-city').textContent = `Svetlo: ${Math.round(lux)} lux`;
+                    
                     let brightness = minJas + ((lux / maxLux) * (1 - minJas));
                     
                     if (brightness > 1) brightness = 1;
