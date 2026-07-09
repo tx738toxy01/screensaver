@@ -90,10 +90,11 @@
         /* Zjemnený font času a väčšie sekundy v pevných jednotkách pre presné meranie */
         #time { 
             font-size: 20rem; 
-            font-weight: 700; letter-spacing: 2px; 
+            font-weight: 400; /* Zmenené z 700 na tenkých 400 */
+            letter-spacing: 2px; 
             text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 0.85;
         }
-        #seconds, #ampm { font-size: 6rem; font-weight: 700; opacity: 0.6; display: none; }
+        #seconds, #ampm { font-size: 6rem; font-weight: 400; opacity: 0.6; display: none; }
         
         .kids-message-box {
             background: rgba(255, 255, 255, 0.1); padding: 20px 50px; align-self: center;
@@ -193,14 +194,15 @@
             font-family: inherit;
             width: 75px;
         }
-        .night-row input[type="number"] {
+        .night-row select {
             background: rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.3);
             color: white;
             padding: 5px;
             border-radius: 6px;
-            width: 50px;
-            text-align: center;
+            outline: none;
+            cursor: pointer;
+            font-weight: bold;
         }
         .btn-add-time {
             background: #4caf50;
@@ -223,6 +225,22 @@
             font-weight: bold;
         }
         
+.modal-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2.2rem;
+            color: #9E9E9E;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s, transform 0.2s;
+            font-weight: bold;
+        }
+        .modal-close-btn:hover, .modal-close-btn:active {
+            color: #FF9800;
+            transform: scale(1.1);
+        }
+
         .modal h2 { margin: 0 0 10px 0; font-size: 1.5rem; text-align: center; }
         
         .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -335,6 +353,7 @@
     <div id="modal-overlay"></div>
     
     <div id="settings-modal" class="modal">
+        <div id="close-settings-btn" class="modal-close-btn">&times;</div>
         <h2>Nastavenia</h2>
         <div class="setting-row"><label>Mesto:</label><input type="text" id="inp-city"></div>
         <div class="setting-row">
@@ -371,7 +390,6 @@
             <div id="night-modes-list"></div>
         </div>
         
-        <button class="btn-primary" id="save-btn">Uložiť</button>
     </div>
 
     <div id="details-modal" class="modal">
@@ -764,7 +782,7 @@
         closeDetailsBtn.addEventListener('click', closeAllModals);
         overlay.addEventListener('click', closeAllModals);
 
-        // Pomocná funkcia na vytvorenie jedného riadku času v nastaveniach
+        // Pomocná funkcia na vytvorenie jedného riadku času (teraz s roletkou)
         function createNightModeRow(from = "20:00", to = "06:00", brightness = 20) {
             const container = document.getElementById('night-modes-list');
             const row = document.createElement('div');
@@ -772,55 +790,33 @@
             row.innerHTML = `
                 <label>Od:</label><input type="time" class="night-from" value="${from}">
                 <label>Do:</label><input type="time" class="night-to" value="${to}">
-                <input type="number" class="night-bright" min="5" max="100" value="${brightness}"><label>%</label>
+                <select class="night-bright">
+                    <option value="20" ${brightness == 20 ? 'selected' : ''}>20 %</option>
+                    <option value="40" ${brightness == 40 ? 'selected' : ''}>40 %</option>
+                    <option value="60" ${brightness == 60 ? 'selected' : ''}>60 %</option>
+                    <option value="80" ${brightness == 80 ? 'selected' : ''}>80 %</option>
+                    <option value="100" ${brightness == 100 ? 'selected' : ''}>100 %</option>
+                </select>
                 <button type="button" class="night-row-del btn-del-time">X</button>
             `;
             
-            row.querySelector('.night-row-del').addEventListener('click', () => row.remove());
+            // Spusti Live Update pri akejkoľvek zmene času alebo jasu
+            row.querySelectorAll('input, select').forEach(el => el.addEventListener('change', liveSave));
+            
+            row.querySelector('.night-row-del').addEventListener('click', () => {
+                row.remove();
+                liveSave(); // Po zmazaní sa jas okamžite prepočíta
+            });
             container.appendChild(row);
         }
 
-        // Kliknutie na tlačidlo + pridať rozsah
         document.getElementById('add-night-time-btn').addEventListener('click', () => {
             createNightModeRow("22:00", "06:00", 20);
+            liveSave(); // Po pridaní okamžite aplikuj
         });
 
-        settingsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('inp-city').value = config.city; 
-            document.getElementById('inp-units').value = config.units;
-            document.getElementById('inp-scale').value = config.scaleValue || 50;
-            document.getElementById('inp-icon-style').value = config.iconStyle || 'kids';
-            document.getElementById('inp-time').value = config.timeFormat; 
-            document.getElementById('inp-seconds').checked = config.showSeconds;
-            document.getElementById('inp-color').value = config.color;
-            
-            // Vyčistíme starý zoznam v HTML a vykreslíme uložené rozsahy z configu
-            document.getElementById('night-modes-list').innerHTML = '';
-            config.nightModes.forEach(mode => {
-                createNightModeRow(mode.from, mode.to, mode.brightness);
-            });
-
-            settingsModal.style.display = 'flex'; overlay.style.display = 'block'; settingsBtn.style.opacity = '0';
-        });
-
-        document.getElementById('inp-scale').addEventListener('input', function() {
-            config.scaleValue = parseInt(this.value);
-            calculateAndApplyScale();
-        });
-
-        document.getElementById('save-btn').addEventListener('click', async () => {
-            const nCity = document.getElementById('inp-city').value;
-            if(nCity.toLowerCase() !== config.city.toLowerCase()) {
-                document.getElementById('save-btn').textContent = 'Hľadám...';
-                try {
-                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${nCity}&count=1`);
-                    const data = await res.json();
-                    if(data.results && data.results.length > 0) {
-                        config.lat = data.results[0].latitude; config.lon = data.results[0].longitude; config.city = data.results[0].name;
-                    } else { alert('Nenašlo sa.'); document.getElementById('save-btn').textContent = 'Uložiť'; return; }
-                } catch(e) {}
-            }
+        // --- HLAVNÝ ENGINE PRE OKAMŽITÉ PREPISOVANIE A UKLADANIE (Live Update) ---
+        async function liveSave(e) {
             config.units = document.getElementById('inp-units').value; 
             config.timeFormat = document.getElementById('inp-time').value;
             config.scaleValue = parseInt(document.getElementById('inp-scale').value);
@@ -828,7 +824,6 @@
             config.showSeconds = document.getElementById('inp-seconds').checked; 
             config.color = document.getElementById('inp-color').value;
             
-            // Uložíme dynamické riadky nočného režimu do konfigurácie
             const modes = [];
             document.querySelectorAll('.night-row').forEach(row => {
                 modes.push({
@@ -841,9 +836,70 @@
 
             localStorage.setItem('familyScreensaver', JSON.stringify(config));
             
-            applyConfig(); fetchWeather(); updateBrightnessByTime(); closeAllModals(); document.getElementById('save-btn').textContent = 'Uložiť';
+            // Okamžite zmeň vzhľad (čas, sekundy, jas, farbu, atď.)
+            applyConfig(); 
+            updateBrightnessByTime();
+
+            // Mesto sa skontroluje, len ak prepíšeš text a odklikneš preč
+            const nCity = document.getElementById('inp-city').value;
+            if(nCity.toLowerCase() !== config.city.toLowerCase() && nCity.trim() !== '') {
+                document.getElementById('adult-city').textContent = 'Hľadám...';
+                try {
+                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${nCity}&count=1`);
+                    const data = await res.json();
+                    if(data.results && data.results.length > 0) {
+                        config.lat = data.results[0].latitude; 
+                        config.lon = data.results[0].longitude; 
+                        config.city = data.results[0].name;
+                        localStorage.setItem('familyScreensaver', JSON.stringify(config));
+                        document.getElementById('adult-city').textContent = config.city;
+                        fetchWeather(); // Obnov počasie pre nové mesto
+                    } else {
+                        document.getElementById('adult-city').textContent = config.city;
+                    }
+                } catch(err) {}
+            }
+
+            // Ak používateľ prepol jednotky alebo štýl ikon, znovu prepočítame widget s počasím
+            if (e && (e.target.id === 'inp-units' || e.target.id === 'inp-icon-style')) {
+                fetchWeather();
+            }
+        }
+
+        // Pripneme záchytnú sieť na všetky prvky v nastaveniach
+        ['inp-units', 'inp-time', 'inp-icon-style', 'inp-color', 'inp-city', 'inp-seconds'].forEach(id => {
+            document.getElementById(id).addEventListener('change', liveSave);
         });
 
+        // Posuvník veľkosti reaguje už pri ťahaní, liveSave ho poistí po pustení
+        document.getElementById('inp-scale').addEventListener('input', function() {
+            config.scaleValue = parseInt(this.value);
+            calculateAndApplyScale();
+        });
+        document.getElementById('inp-scale').addEventListener('change', liveSave);
+
+        // Otvorenie nastavení (vyplní údaje z pamäte)
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('inp-city').value = config.city; 
+            document.getElementById('inp-units').value = config.units;
+            document.getElementById('inp-scale').value = config.scaleValue || 50;
+            document.getElementById('inp-icon-style').value = config.iconStyle || 'kids';
+            document.getElementById('inp-time').value = config.timeFormat; 
+            document.getElementById('inp-seconds').checked = config.showSeconds;
+            document.getElementById('inp-color').value = config.color;
+            
+            document.getElementById('night-modes-list').innerHTML = '';
+            config.nightModes.forEach(mode => {
+                createNightModeRow(mode.from, mode.to, mode.brightness);
+            });
+
+            settingsModal.style.display = 'flex'; overlay.style.display = 'block'; settingsBtn.style.opacity = '0';
+        });
+
+        // Krížik v pravom hornom rohu zatvára okno nastavení
+        document.getElementById('close-settings-btn').addEventListener('click', closeAllModals);
+            
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
         
         setTimeout(() => { 
