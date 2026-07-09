@@ -135,7 +135,7 @@
         .feels-label { font-size: 1.1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; margin-bottom: -4px; z-index: 1;}
         #adult-feels-like { font-size: 3.5rem; font-weight: 700; color: #B0BEC5; line-height: 1;}
         
-        #adult-city { font-size: 1.3rem; color: #757575; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; margin-top: 5px;}
+        #adult-sensor { font-size: 1rem; color: #9E9E9E; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-top: 2px;}
 
         .adult-forecast { display: flex; justify-content: space-between; flex: 1; margin-left: 15px; gap: 15px; }
         .forecast-item { 
@@ -232,6 +232,7 @@
                             </div>
                         </div>
                         <span id="adult-city">Mesto</span>
+                        <span id="adult-sensor">Senzor svetla: -- lux</span>
                     </div>
                 </div>
                 
@@ -749,29 +750,31 @@
 
         // --- AUTOBRIGHTNESS (Senzor okolitého svetla) ---
         function startAmbientLightSensor() {
+            const sensorStatus = document.getElementById('adult-sensor');
             try {
                 if ('AmbientLightSensor' in window) {
                     navigator.permissions.query({ name: 'ambient-light-sensor' }).then(result => {
                         if (result.state === 'granted') {
                             initSensor();
                         } else if (result.state === 'prompt') {
-                            showToast("Pokúšam sa spustiť senzor jasu...");
+                            sensorStatus.textContent = "Senzor svetla: Pripravujem...";
                             initSensor(); 
                         } else if (result.state === 'denied') {
-                            alert('Senzor svetla je zablokovaný. Povoľ ho v nastaveniach prehliadača (Ikonka zámku v paneli s adresou -> Povolenia).');
+                            sensorStatus.textContent = "Senzor svetla: Zablokovaný v prehliadači";
                         }
                     }).catch(err => {
-                        console.warn('Nepodarilo sa overiť povolenia pre senzor jasu.', err);
+                        sensorStatus.textContent = "Senzor svetla: Chyba povolení";
                     });
                 } else {
-                    alert('Prehliadač nepodporuje senzor svetla (časté u Safari/iOS). Stmievanie v tme nebude fungovať. Skús v chrome://flags zapnúť Experimental Web Platform features.');
+                    sensorStatus.textContent = "Senzor svetla: Prehliadač nepodporuje";
                 }
             } catch (err) {
-                console.error('Senzor svetla nie je dostupný:', err);
+                sensorStatus.textContent = "Senzor svetla: Nedostupný";
             }
         }
 
         function initSensor() {
+            const sensorStatus = document.getElementById('adult-sensor');
             try {
                 const sensor = new AmbientLightSensor();
                 const minJas = 0.1; 
@@ -782,11 +785,10 @@
                 sensor.addEventListener('reading', () => {
                     let lux = sensor.illuminance;
                     
-                    // TEST: Vypíše aktuálne luxy priamo tam, kde býva názov mesta
-                    document.getElementById('adult-city').textContent = `Svetlo: ${Math.round(lux)} lux`;
+                    // Zápis luxov pod mesto
+                    sensorStatus.textContent = `Senzor svetla: ${Math.round(lux)} lux`;
                     
                     let brightness = minJas + ((lux / maxLux) * (1 - minJas));
-                    
                     if (brightness > 1) brightness = 1;
                     if (brightness < minJas) brightness = minJas;
                     
@@ -795,15 +797,17 @@
 
                 sensor.addEventListener('error', event => {
                     if (event.error.name === 'NotAllowedError') {
-                        alert('Prístup k senzoru bol zamietnutý. Prehliadač ho blokuje.');
+                        sensorStatus.textContent = "Senzor svetla: Blokovaný";
                     } else if (event.error.name === 'NotReadableError') {
-                        console.warn('Senzor je momentálne nedostupný.');
+                        sensorStatus.textContent = "Senzor svetla: Nemôžem prečítať dáta";
+                    } else {
+                        sensorStatus.textContent = "Senzor svetla: Zlyhal";
                     }
                 });
 
                 sensor.start();
             } catch (e) {
-                console.error("Chyba inicializácie senzora: ", e);
+                sensorStatus.textContent = "Senzor svetla: Chyba spustenia";
             }
         }
 
