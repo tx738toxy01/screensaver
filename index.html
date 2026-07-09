@@ -156,8 +156,72 @@
             padding: 30px; border-radius: 25px; border: 2px solid rgba(255,255,255,0.15);
             display: none; flex-direction: column; gap: 15px; color: white; z-index: 100;
         }
-        #settings-modal { width: 380px; }
+        #settings-modal { 
+            width: 420px; 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            box-sizing: border-box;
+        }
         #details-modal { width: 450px; }
+        
+        /* Štýly pre sekciu nočného režimu */
+        .night-mode-section {
+            margin-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            padding-top: 15px;
+        }
+        .night-mode-section h3 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            color: #FF9800;
+        }
+        .night-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .night-row input[type="time"] {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px;
+            border-radius: 6px;
+            font-family: inherit;
+            width: 75px;
+        }
+        .night-row input[type="number"] {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 5px;
+            border-radius: 6px;
+            width: 50px;
+            text-align: center;
+        }
+        .btn-add-time {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .btn-del-time {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
         
         .modal h2 { margin: 0 0 10px 0; font-size: 1.5rem; text-align: center; }
         
@@ -300,6 +364,13 @@
                 <option value="#4caf50">Zelená</option><option value="#29b6f6">Modrá</option>
             </select>
         </div>
+        
+        <div class="night-mode-section">
+            <h3>Nočný režim (Automatický jas)</h3>
+            <button type="button" class="btn-add-time" id="add-night-time-btn">+ Pridať čas</button>
+            <div id="night-modes-list"></div>
+        </div>
+        
         <button class="btn-primary" id="save-btn">Uložiť</button>
     </div>
 
@@ -320,8 +391,10 @@
 
     <script>
         let config = JSON.parse(localStorage.getItem('familyScreensaver')) || {
-            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: '#ffffff', scaleValue: 50, iconStyle: 'kids'
+            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: '#ffffff', scaleValue: 50, iconStyle: 'kids',
+            nightModes: [{ from: "20:00", to: "06:00", brightness: 20 }]
         };
+        if (!config.nightModes) config.nightModes = [{ from: "20:00", to: "06:00", brightness: 20 }];
         
         if (config.scale !== undefined && config.scaleValue === undefined) { config.scaleValue = 50; }
 
@@ -564,6 +637,44 @@
             } catch (err) { console.error(err); }
         }
 
+        // Engine, ktorý prechádza zoznam časov a nastavuje jas aplikácie
+        function updateBrightnessByTime() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${hh}:${mm}`;
+            
+            let currentTargetBrightness = 100; // Predvolený jas cez deň je 100 %
+            
+            if (config.nightModes && config.nightModes.length > 0) {
+                config.nightModes.forEach(mode => {
+                    let isInside = false;
+                    
+                    if (mode.from <= mode.to) {
+                        // Klasický interval v rámci jedného dňa (napr. 14:00 - 16:00)
+                        if (currentTime >= mode.from && currentTime < mode.to) {
+                            isInside = true;
+                        }
+                    } else {
+                        // Interval prechádzajúci cez polnoc (napr. 20:00 - 06:00)
+                        if (currentTime >= mode.from || currentTime < mode.to) {
+                            isInside = true;
+                        }
+                    }
+                    
+                    if (isInside) {
+                        // Ak sme v noci v aktívnom rozsahu, aplikujeme vybraný jas.
+                        // Ak by sa náhodou viacero rozsahov prekrývalo, vyberie sa ten najtmavší (najnižší jas).
+                        currentTargetBrightness = Math.min(currentTargetBrightness, mode.brightness);
+                    }
+                });
+            }
+            
+            // Premeníme percentá (napr. 20%) na hodnotu filtra jasu (0.2)
+            const calculatedFilter = currentTargetBrightness / 100;
+            document.body.style.filter = `brightness(${calculatedFilter})`;
+        }
+
         function updateTime() {
             const now = new Date();
             let h = now.getHours(), m = String(now.getMinutes()).padStart(2, '0'), s = String(now.getSeconds()).padStart(2, '0');
@@ -573,6 +684,9 @@
             }
             document.getElementById('time').textContent = `${String(h).padStart(2, '0')}:${m}`;
             if(config.showSeconds) document.getElementById('seconds').textContent = s;
+            
+            // Pri každej sekunde skontrolujeme a prípadne upravíme jas podľa rozvrhu
+            updateBrightnessByTime();
         }
 
         // Globálna poistka: pri štarte drží widget v strede
@@ -650,6 +764,27 @@
         closeDetailsBtn.addEventListener('click', closeAllModals);
         overlay.addEventListener('click', closeAllModals);
 
+        // Pomocná funkcia na vytvorenie jedného riadku času v nastaveniach
+        function createNightModeRow(from = "20:00", to = "06:00", brightness = 20) {
+            const container = document.getElementById('night-modes-list');
+            const row = document.createElement('div');
+            row.className = 'night-row';
+            row.innerHTML = `
+                <label>Od:</label><input type="time" class="night-from" value="${from}">
+                <label>Do:</label><input type="time" class="night-to" value="${to}">
+                <input type="number" class="night-bright" min="5" max="100" value="${brightness}"><label>%</label>
+                <button type="button" class="night-row-del btn-del-time">X</button>
+            `;
+            
+            row.querySelector('.night-row-del').addEventListener('click', () => row.remove());
+            container.appendChild(row);
+        }
+
+        // Kliknutie na tlačidlo + pridať rozsah
+        document.getElementById('add-night-time-btn').addEventListener('click', () => {
+            createNightModeRow("22:00", "06:00", 20);
+        });
+
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             document.getElementById('inp-city').value = config.city; 
@@ -659,10 +794,16 @@
             document.getElementById('inp-time').value = config.timeFormat; 
             document.getElementById('inp-seconds').checked = config.showSeconds;
             document.getElementById('inp-color').value = config.color;
+            
+            // Vyčistíme starý zoznam v HTML a vykreslíme uložené rozsahy z configu
+            document.getElementById('night-modes-list').innerHTML = '';
+            config.nightModes.forEach(mode => {
+                createNightModeRow(mode.from, mode.to, mode.brightness);
+            });
+
             settingsModal.style.display = 'flex'; overlay.style.display = 'block'; settingsBtn.style.opacity = '0';
         });
 
-        // Živý náhľad veľkosti pri potiahnutí posuvníka
         document.getElementById('inp-scale').addEventListener('input', function() {
             config.scaleValue = parseInt(this.value);
             calculateAndApplyScale();
@@ -686,9 +827,21 @@
             config.iconStyle = document.getElementById('inp-icon-style').value;
             config.showSeconds = document.getElementById('inp-seconds').checked; 
             config.color = document.getElementById('inp-color').value;
+            
+            // Uložíme dynamické riadky nočného režimu do konfigurácie
+            const modes = [];
+            document.querySelectorAll('.night-row').forEach(row => {
+                modes.push({
+                    from: row.querySelector('.night-from').value,
+                    to: row.querySelector('.night-to').value,
+                    brightness: parseInt(row.querySelector('.night-bright').value) || 100
+                });
+            });
+            config.nightModes = modes;
+
             localStorage.setItem('familyScreensaver', JSON.stringify(config));
             
-            applyConfig(); fetchWeather(); closeAllModals(); document.getElementById('save-btn').textContent = 'Uložiť';
+            applyConfig(); fetchWeather(); updateBrightnessByTime(); closeAllModals(); document.getElementById('save-btn').textContent = 'Uložiť';
         });
 
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
