@@ -101,9 +101,10 @@
         /* Zjemnený font času a väčšie sekundy v pevných jednotkách pre presné meranie */
         #time { 
             font-size: 20rem; 
-            font-weight: 400; /* Zmenené z 700 na tenkých 400 */
+            font-weight: 400; 
             letter-spacing: 2px; 
             text-shadow: 4px 8px 15px rgba(0,0,0,0.6); margin: 0; line-height: 0.85;
+            transition: color 1s ease; /* Plynulý prechod farby */
         }
         #seconds { font-size: 15rem; font-weight: 400; opacity: 0.6; display: none; }
         #ampm { font-size: 6rem; font-weight: 400; opacity: 0.6; display: none; }
@@ -235,7 +236,7 @@
             font-weight: bold;
         }
         
-.modal-close-btn {
+        .modal-close-btn {
             position: absolute;
             top: 15px;
             right: 20px;
@@ -284,12 +285,10 @@
         </defs>
     </svg>
 
-    <!-- ŠTARTOVACIA OBRAZOVKA -->
     <div id="start-screen">
         <div class="start-btn">Ťukni pre<br>celú obrazovku</div>
     </div>
 
-    <!-- BUBLINA S POPISOM POČASIA -->
     <div id="toast">Popis</div>
 
     <div id="widget">
@@ -391,8 +390,11 @@
         <div class="setting-row">
             <label>Farba textu:</label>
             <select id="inp-color">
-                <option value="#ffffff">Biela (Klasika)</option><option value="#ff9800">Oranžová (Noc)</option>
-                <option value="#4caf50">Zelená</option><option value="#29b6f6">Modrá</option>
+                <option value="auto">Podľa teploty (Auto)</option>
+                <option value="#ffffff">Biela (Klasika)</option>
+                <option value="#ff9800">Oranžová (Noc)</option>
+                <option value="#4caf50">Zelená</option>
+                <option value="#29b6f6">Modrá</option>
             </select>
         </div>
         
@@ -421,10 +423,11 @@
 
     <script>
         let config = JSON.parse(localStorage.getItem('familyScreensaver')) || {
-            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: '#ffffff', scaleValue: 50, iconStyle: 'kids',
+            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: 'auto', scaleValue: 50, iconStyle: 'kids',
             nightModes: [{ from: "20:00", to: "06:00", brightness: 20 }]
         };
         if (!config.nightModes) config.nightModes = [{ from: "20:00", to: "06:00", brightness: 20 }];
+        if (!config.color) config.color = 'auto'; // Zabezpečenie pre staršie uložené nastavenia
         
         if (config.scale !== undefined && config.scaleValue === undefined) { config.scaleValue = 50; }
 
@@ -434,6 +437,16 @@
             63: 'Dážď', 65: 'Silný dážď', 71: 'Slabé sneženie', 73: 'Sneženie', 
             80: 'Prehánky', 95: 'Búrka', 99: 'Silná búrka'
         };
+
+        // --- FUNKCIA NA FARBU PODĽA TEPLOTY ---
+        function getTempColor(temp) {
+            if (temp < 0) return '#FF80AB';                  // Ružová
+            if (temp >= 0 && temp < 10) return '#29B6F6';    // Modrá
+            if (temp >= 10 && temp < 20) return '#4CAF50';   // Zelená
+            if (temp >= 20 && temp < 30) return '#FFF59D';   // Slabožltá
+            if (temp >= 30 && temp <= 40) return '#FFEB3B';  // Žltá
+            return '#FF5252';                                // Červená (nad 40)
+        }
 
         let toastTimeout;
         function showToast(text) {
@@ -490,7 +503,6 @@
             }, 100);
         }
 
-        // Ak užívateľ otočí telefón, prepočítame veľkosť znova
         window.addEventListener('resize', () => {
             clearTimeout(window.resizeTimer);
             window.resizeTimer = setTimeout(calculateAndApplyScale, 100);
@@ -502,7 +514,15 @@
         }
 
         function applyConfig() {
-            document.body.style.color = config.color;
+            if (config.color === 'auto') {
+                document.body.style.color = '#ffffff'; // Predvolená biela pre všetok ostatný text
+                // Hodiny si dorieši funkcia fetchWeather, ale zatiaľ im môžeme resetovať farbu
+                document.getElementById('time').style.color = ''; 
+            } else {
+                document.body.style.color = config.color;
+                document.getElementById('time').style.color = config.color;
+            }
+
             document.getElementById('seconds').style.display = config.showSeconds ? 'block' : 'none';
             document.getElementById('ampm').style.display = config.timeFormat === '12' ? 'block' : 'none';
             document.getElementById('adult-city').textContent = config.city;
@@ -547,7 +567,8 @@
             
             if (wmoCode <= 61) return svgStart + duckPuddle + svgEnd;
             if (wmoCode <= 67) return svgStart + happyRainCloud + svgEnd;
-            if (wmoCode <= 86) return svgStart + snowman + svgEnd;
+            if (wmoCode >= 80 && wmoCode <= 82) return svgStart + duckPuddle + svgEnd; // Prehánky
+            if (wmoCode <= 86) return svgStart + snowman + svgEnd; // Reálne snehové kódy (71, 73, atď.)
             if (wmoCode >= 95) return svgStart + angryThunderCloud + svgEnd;
             
             return svgStart + doubleHappyCloud + svgEnd;
@@ -580,6 +601,7 @@
                 if (wmoCode === 45 || wmoCode === 48) return "Hmla hustá ako mlieko, uuu!";
                 if (wmoCode < 50) return "Mesiačik sa schoval za obláčik, dobrú noc.";
                 if (wmoCode <= 67) return "Vonku prší, pekne sa zakry!";
+                if (wmoCode >= 80 && wmoCode <= 82) return "Vonku je prehánka, pekne sa zakry!";
                 if (wmoCode <= 86) return "Padá sniežik, spinkaj v teplúčku.";
                 if (wmoCode >= 95) return "Búrka vonku, v postieľke si v bezpečí!";
                 return "Dobrú noc a sladké sny!";
@@ -592,6 +614,7 @@
             if (wmoCode < 50) return "Slnko sa schovalo za obláčiky.";
             if (wmoCode <= 61) return "Kvap, kvap. Vezmi si kapucňu.";
             if (wmoCode <= 67) return "Prší! Gumáky a pršiplášť to istia!";
+            if (wmoCode >= 80 && wmoCode <= 82) return "Vonku je letná prehánka, počkáme kým prejde!";
             if (wmoCode <= 86) return "Padá sniežik, ide sa stavať snehuliak!";
             if (wmoCode >= 95) return "Blesky lietajú, pozeráme sa radšej z okna!";
             return "Pozri von z okna, čo sa deje!";
@@ -611,6 +634,11 @@
                 const currentHour = new Date().getHours();
                 const isNight = currentHour >= 19 || currentHour < 6;
                 const u = config.units === 'celsius' ? '°C' : '°F';
+
+                // NOVÉ: Aplikácia farby podľa teploty na hlavné hodiny
+                if (config.color === 'auto') {
+                    document.getElementById('time').style.color = getTempColor(curTemp);
+                }
 
                 const kidIcon = document.getElementById('kid-icon');
                 kidIcon.innerHTML = getKidSVG(wmo, curTemp, isNight);
@@ -681,26 +709,21 @@
                     let isInside = false;
                     
                     if (mode.from <= mode.to) {
-                        // Klasický interval v rámci jedného dňa (napr. 14:00 - 16:00)
                         if (currentTime >= mode.from && currentTime < mode.to) {
                             isInside = true;
                         }
                     } else {
-                        // Interval prechádzajúci cez polnoc (napr. 20:00 - 06:00)
                         if (currentTime >= mode.from || currentTime < mode.to) {
                             isInside = true;
                         }
                     }
                     
                     if (isInside) {
-                        // Ak sme v noci v aktívnom rozsahu, aplikujeme vybraný jas.
-                        // Ak by sa náhodou viacero rozsahov prekrývalo, vyberie sa ten najtmavší (najnižší jas).
                         currentTargetBrightness = Math.min(currentTargetBrightness, mode.brightness);
                     }
                 });
             }
             
-            // Premeníme percentá (napr. 20%) na hodnotu filtra jasu (0.2)
             const calculatedFilter = currentTargetBrightness / 100;
             document.body.style.filter = `brightness(${calculatedFilter})`;
         }
@@ -717,19 +740,15 @@
             document.getElementById('time').textContent = `${String(h).padStart(2, '0')}:${m}`;
             if(config.showSeconds) document.getElementById('seconds').textContent = s;
             
-            // Aktualizácia dátumu s rokom
             const days = ['Nedeľa', 'Pondelok', 'Utorok', 'Streda', 'Štvrtok', 'Piatok', 'Sobota'];
             const months = ['január', 'február', 'marec', 'apríl', 'máj', 'jún', 'júl', 'august', 'september', 'október', 'november', 'december'];
             document.getElementById('date-display').textContent = `${days[now.getDay()]}, ${now.getDate()}. ${months[now.getMonth()]} ${now.getFullYear()}`;
             
-            // Pri každej sekunde skontrolujeme a prípadne upravíme jas podľa rozvrhu
             updateBrightnessByTime();
         }
 
-        // Globálna poistka: pri štarte drží widget v strede
         let isFirstLoad = true;
 
-        // Matematicky presné presúvanie widgetu (na stred pri štarte, neskôr náhodne)
         function moveWidget() {
             const widget = document.getElementById('widget');
             const inner = document.getElementById('widget-inner');
@@ -745,11 +764,9 @@
             let safeX, safeY;
             
             if (isFirstLoad) {
-                // Pri prvom zobrazení umiestni widget dokonale do stredu obrazovky
                 safeX = (window.innerWidth - actualW) / 2;
                 safeY = (window.innerHeight - actualH) / 2;
             } else {
-                // Po uplynutí minúty začne klasický šetrič obrazovky na náhodné pozície
                 const maxX = window.innerWidth - actualW - 40; 
                 const maxY = window.innerHeight - actualH - 40;
                 
@@ -776,7 +793,6 @@
             detailsModal.style.display = 'none';
             overlay.style.display = 'none';
             
-            // Reštart mierky, ak sa okno zavrelo bez uloženia
             let saved = JSON.parse(localStorage.getItem('familyScreensaver'));
             if(saved && saved.scaleValue !== undefined) {
                 config.scaleValue = saved.scaleValue;
@@ -801,7 +817,6 @@
         closeDetailsBtn.addEventListener('click', closeAllModals);
         overlay.addEventListener('click', closeAllModals);
 
-        // Pomocná funkcia na vytvorenie jedného riadku času (teraz s roletkou)
         function createNightModeRow(from = "20:00", to = "06:00", brightness = 20) {
             const container = document.getElementById('night-modes-list');
             const row = document.createElement('div');
@@ -819,22 +834,20 @@
                 <button type="button" class="night-row-del btn-del-time">X</button>
             `;
             
-            // Spusti Live Update pri akejkoľvek zmene času alebo jasu
             row.querySelectorAll('input, select').forEach(el => el.addEventListener('change', liveSave));
             
             row.querySelector('.night-row-del').addEventListener('click', () => {
                 row.remove();
-                liveSave(); // Po zmazaní sa jas okamžite prepočíta
+                liveSave(); 
             });
             container.appendChild(row);
         }
 
         document.getElementById('add-night-time-btn').addEventListener('click', () => {
             createNightModeRow("22:00", "06:00", 20);
-            liveSave(); // Po pridaní okamžite aplikuj
+            liveSave(); 
         });
 
-        // --- HLAVNÝ ENGINE PRE OKAMŽITÉ PREPISOVANIE A UKLADANIE (Live Update) ---
         async function liveSave(e) {
             config.units = document.getElementById('inp-units').value; 
             config.timeFormat = document.getElementById('inp-time').value;
@@ -855,11 +868,9 @@
 
             localStorage.setItem('familyScreensaver', JSON.stringify(config));
             
-            // Okamžite zmeň vzhľad (čas, sekundy, jas, farbu, atď.)
             applyConfig(); 
             updateBrightnessByTime();
 
-            // Mesto sa skontroluje, len ak prepíšeš text a odklikneš preč
             const nCity = document.getElementById('inp-city').value;
             if(nCity.toLowerCase() !== config.city.toLowerCase() && nCity.trim() !== '') {
                 document.getElementById('adult-city').textContent = 'Hľadám...';
@@ -872,32 +883,28 @@
                         config.city = data.results[0].name;
                         localStorage.setItem('familyScreensaver', JSON.stringify(config));
                         document.getElementById('adult-city').textContent = config.city;
-                        fetchWeather(); // Obnov počasie pre nové mesto
+                        fetchWeather(); 
                     } else {
                         document.getElementById('adult-city').textContent = config.city;
                     }
                 } catch(err) {}
             }
 
-            // Ak používateľ prepol jednotky alebo štýl ikon, znovu prepočítame widget s počasím
-            if (e && (e.target.id === 'inp-units' || e.target.id === 'inp-icon-style')) {
+            if (e && (e.target.id === 'inp-units' || e.target.id === 'inp-icon-style' || e.target.id === 'inp-color')) {
                 fetchWeather();
             }
         }
 
-        // Pripneme záchytnú sieť na všetky prvky v nastaveniach
         ['inp-units', 'inp-time', 'inp-icon-style', 'inp-color', 'inp-city', 'inp-seconds'].forEach(id => {
             document.getElementById(id).addEventListener('change', liveSave);
         });
 
-        // Posuvník veľkosti reaguje už pri ťahaní, liveSave ho poistí po pustení
         document.getElementById('inp-scale').addEventListener('input', function() {
             config.scaleValue = parseInt(this.value);
             calculateAndApplyScale();
         });
         document.getElementById('inp-scale').addEventListener('change', liveSave);
 
-        // Otvorenie nastavení (vyplní údaje z pamäte)
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             document.getElementById('inp-city').value = config.city; 
@@ -916,7 +923,6 @@
             settingsModal.style.display = 'flex'; overlay.style.display = 'block'; settingsBtn.style.opacity = '0';
         });
 
-        // Krížik v pravom hornom rohu zatvára okno nastavení
         document.getElementById('close-settings-btn').addEventListener('click', closeAllModals);
             
         applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
@@ -925,7 +931,6 @@
             document.getElementById('widget').style.transition = 'transform 60s linear'; 
             moveWidget(); 
             
-            // Časovač šetriča: po 60 sekundách v strede dovolí aplikácii jemný pohyb
             setInterval(() => {
                 isFirstLoad = false; 
                 moveWidget();
@@ -939,7 +944,6 @@
             else if (element.msRequestFullscreen) element.msRequestFullscreen();
         }
 
-        // --- WAKE LOCK API (Zabráni vypnutiu displeja na Androide/iOS) ---
         let wakeLock = null;
         
         async function keepScreenAwake() {
@@ -953,24 +957,20 @@
             }
         }
 
-        // Ak appku zhodíš na pozadie a znovu otvoríš, musíme znova "zobudiť" displej
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 keepScreenAwake();
             }
         });
 
-        // Spustenie po ťuknutí na úvodnú obrazovku
         const startScreen = document.getElementById('start-screen');
         startScreen.addEventListener('click', () => { 
             requestFullScreen(document.documentElement); 
             keepScreenAwake();
             
-            // Plynulé zmiznutie štartovacej obrazovky
             startScreen.style.opacity = '0';
             setTimeout(() => {
                 startScreen.style.display = 'none';
-                // Prepočítanie widgetu po zapnutí full screenu (displej zmenil rozmery kvôli skrytiu líšt)
                 calculateAndApplyScale();
             }, 500);
         });
