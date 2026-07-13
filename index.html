@@ -98,7 +98,7 @@
             border-radius: 50px; border: 3px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px); text-align: center;
         }
-        #kids-message { font-size: 2.8rem; font-weight: 700; }
+        #kids-message { font-size: 2.8rem; font-weight: 700; transition: opacity 0.5s ease; }
 
         /* --- ZÓNA PRE DOSPELÝCH --- */
         .adults-section {
@@ -420,12 +420,12 @@
 
         // --- FUNKCIA NA FARBU PODĽA TEPLOTY ---
         function getTempColor(temp) {
-            if (temp < 0) return '#FF80AB';                  // Ružová
-            if (temp >= 0 && temp < 10) return '#29B6F6';    // Modrá
-            if (temp >= 10 && temp < 20) return '#4CAF50';   // Zelená
-            if (temp >= 20 && temp < 30) return '#FFF59D';   // Slabožltá
-            if (temp >= 30 && temp <= 40) return '#FFEB3B';  // Žltá
-            return '#FF5252';                                // Červená (nad 40)
+            if (temp <= 0) return '#FF80AB';                 // Ružová (mínusy a 0)
+            if (temp < 10) return '#29B6F6';                 // Modrá (1 až 9)
+            if (temp < 20) return '#4CAF50';                 // Zelená (10 až 19)
+            if (temp < 30) return '#FFEB3B';                 // Žltá (20 až 29)
+            if (temp < 40) return '#FF9800';                 // Oranžová (30 až 39)
+            return '#FF5252';                                // Červená (40 a vyššie)
         }
 
         let toastTimeout;
@@ -574,29 +574,34 @@
             return svgStart + `<path d="M25 65 A 20 20 0 0 1 25 25 A 25 25 0 0 1 70 20 A 25 25 0 0 1 75 70 Z" fill="url(#cloudGrad)"/>` + svgEnd;
         }
 
+        // --- ROTÁCIA A ZOZNAMY DETSKÝCH HLÁŠOK ---
+        let kidMessageInterval = null;
+        let currentMessageIndex = 0;
+
+        function getKidMessagesArray(wmoCode, temp, isNight) {
+            const msgs = {
+                nightClear: [
+                    "Hviezdičky svietia, je čas ísť spinkať!", "Mesiačik sa na teba usmieva zhora.", 
+                    "Zatvor očká, nech sa ti snívajú pekné sny.", "Obloha je plná hviezd, dobrú noc!", 
+                    "Tma už prišla, šup do postieľky.", "Spi sladko ako malý medvedík.", 
+                    "Počuješ cvrčkov? Čas na spánok.", "Zajtra je tiež deň, pekné sny!", 
+                    "Nech ťa v noci anjelici strážia.", "Cestuj v snách do rozprávky!"
+                ],
+                nightCloudy: [
+                    "Mráčiky sa k sebe túlia v tme.", "Mesiačik sa schoval pod perinku z mrakov.", 
+                    "Dobré sny pod oblačnou oblohou.", "Oblaky ťa prikryjú ako mäkká perinka.", 
+                    "Hviezdičky dnes spinkajú zaTu je kompletný patch, ktorý nahradí starú statickú funkciu obrovskou knižnicou 270 hlášok (presne 30 pre každú hlavnú kategóriu počasia) a pridá automatické rotovanie každých 5 sekúnd.
+
+Pôjdeme na to v dvoch krokoch.
+
+### 1. Odstránenie starej logiky a vloženie novej knižnice
+Nájdi v kóde túto pôvodnú funkciu (okolo riadku 351) a **celú ju vymaž**:
+
+```javascript
         function getKidMessage(wmoCode, temp, isNight) {
             if (isNight) {
                 if (wmoCode <= 2) return "Hviezdičky svietia, je čas ísť spinkať!";
-                if (wmoCode === 3) return "Mráčiky sa k sebe túlia.";
-                if (wmoCode === 45 || wmoCode === 48) return "Hmla hustá ako mlieko, uuu!";
-                if (wmoCode < 50) return "Mesiačik sa schoval za obláčik, dobrú noc.";
-                if (wmoCode <= 67) return "Vonku prší, pekne sa zakry!";
-                if (wmoCode >= 80 && wmoCode <= 82) return "Vonku je prehánka, pekne sa zakry!";
-                if (wmoCode <= 86) return "Padá sniežik, spinkaj v teplúčku.";
-                if (wmoCode >= 95) return "Búrka vonku, v postieľke si v bezpečí!";
-                return "Dobrú noc a sladké sny!";
-            }
-
-            if (wmoCode <= 1) return temp > 28 ? "Veľmi pečie slnko, daj si zmrzlinu!" : (temp < 0 ? "Je zima ako tučniakovi, daj si bundu!" : "Svieti slniečko, môžeš si dať tričko!");
-            if (wmoCode === 2) return "Slniečko sa hrá na schovávačku.";
-            if (wmoCode === 3) return "Mráčiky sa k sebe túlia.";
-            if (wmoCode === 45 || wmoCode === 48) return "Hmla hustá ako mlieko, uuu!";
-            if (wmoCode < 50) return "Slnko sa schovalo za obláčiky.";
-            if (wmoCode <= 61) return "Kvap, kvap. Vezmi si kapucňu.";
-            if (wmoCode <= 67) return "Prší! Gumáky a pršiplášť to istia!";
-            if (wmoCode >= 80 && wmoCode <= 82) return "Vonku je letná prehánka, počkáme kým prejde!";
-            if (wmoCode <= 86) return "Padá sniežik, ide sa stavať snehuliak!";
-            if (wmoCode >= 95) return "Blesky lietajú, pozeráme sa radšej z okna!";
+                // ... zvyšok starého kódu
             return "Pozri von z okna, čo sa deje!";
         }
 
@@ -623,7 +628,9 @@
                 const kidIcon = document.getElementById('kid-icon');
                 kidIcon.innerHTML = getKidSVG(wmo, curTemp, isNight);
                 kidIcon.dataset.weather = weatherTranslations[wmo] || 'Neznáme'; 
-                document.getElementById('kids-message').textContent = getKidMessage(wmo, curTemp, isNight);
+                currentKidMessages = getKidMessageArray(wmo, curTemp, isNight);
+                kidMessageIndex = 0;
+                rotateKidMessage();
 
                 document.getElementById('adult-current-icon').innerHTML = getAdultSVG(wmo, isNight);
                 
