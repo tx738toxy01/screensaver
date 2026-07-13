@@ -574,36 +574,111 @@
             return svgStart + `<path d="M25 65 A 20 20 0 0 1 25 25 A 25 25 0 0 1 70 20 A 25 25 0 0 1 75 70 Z" fill="url(#cloudGrad)"/>` + svgEnd;
         }
 
-        // --- ROTÁCIA A ZOZNAMY DETSKÝCH HLÁŠOK ---
-        let kidMessageInterval = null;
-        let currentMessageIndex = 0;
+        // --- KNIŽNICA HLÁŠOK PRE DETI (30 pre každý stav) ---
+        const kidMessagesLists = {
+            day_hot: [
+                "Veľmi pečie slnko, daj si zmrzlinu!", "Nezabudni na opaľovací krém!", "Vypiť veľa vodičky, aby si vládal!", "Ideálny čas na bazén!", "Schovaj sa na chvíľu do chládku.", 
+                "Slnko hreje ako pec!", "Daj si klobúčik alebo šiltovku.", "Vyzuj si topánky a behaj bosý!", "Nanuk ťa určite osvieži.", "Dnes to je na plavky!", 
+                "Nezabudni slnečné okuliare.", "Cikády už určite spievajú.", "Teplota stúpa, pi veľa vody!", "Pieskovisko je asi horúce.", "Skús chytiť slnečný lúč!", 
+                "Nájdi si miesto pod stromom.", "Deň stvorený na vodné bomby!", "Voda v bazéne je určite super.", "Daj si studený melón.", "Potíme sa ako myšky.", 
+                "Dnes sa určite spáliš bez krému!", "Slnečník je tvoj najlepší kamoš.", "Vyhýbaj sa priamemu slnku na obed.", "Horúco ako v Afrike!", "Aj psíkom je dnes teplo.", 
+                "Pusti si na seba hadicu!", "Roztopíme sa ako čokoláda.", "Zober si fľašu s vodou von.", "Limonáda s ľadom to istí.", "Dnes sa nikam neponáhľaj."
+            ],
+            day_cold: [
+                "Je zima ako tučniakovi, daj si bundu!", "Nezabudni si čiapku a šál!", "Rukavice na ruky, rýchlo!", "Zima štípe na líčka.", "Dnes to chce teplý čajík.",
+                "Brrr, to je ale kosa!", "Dýchaš a vidíš obláčiky!", "Obleč sa ako cibuľa - veľa vrstiev.", "Možno zamrzne aj kaluža.", "Studený noštek treba schovať.",
+                "Poriadne teplé ponožky sú základ.", "Zima zachádza za nechty.", "Zohrej sa doma pod dekou.", "Skáč, aby ti nebola zima!", "Slnko svieti, ale nehreje.",
+                "Daj si hrubý sveter.", "Cencúle možno už rastú.", "Vietor fúka ako drak.", "Horúce kakao by teraz bodlo.", "Líčka máš červené ako jabĺčka.",
+                "Utiekli by sme najradšej k peci.", "Nezabudni si zapnúť bundu až ku krku.", "Aj snehuliaci by sa obliekli.", "Studený deň na rýchlu prechádzku.", "Krokuj rýchlo, zohreješ sa.",
+                "Zimné topánky ťa ochránia.", "Krk v teple, to je pravidlo.", "Vonku je ako v chladničke.", "Nos studený ako cencúľ.", "Zimná nálada je tu."
+            ],
+            day_nice: [
+                "Svieti slniečko, môžeš si dať tričko!", "Krásny deň na ihrisko!", "Slnko sa na teba usmieva.", "Vytiahni bicykel alebo kolobežku!", "Vzduch vonia pekne, poď von.",
+                "Motýle určite lietajú.", "Zober loptu a bež sa hrať.", "Kriedy do ruky a kresli na chodník.", "Deň ako maľovaný!", "Skvelý čas na prechádzku do parku.",
+                "Na oblohe ani mráčik.", "Veselo sa skáče na trampolíne.", "Slniečko ťa volá von.", "Počúvaj, ako spievajú vtáčiky.", "Modrá obloha je dnes najkrajšia.",
+                "Nájdi vonku pekný kamienok.", "Úsmev na tvár, je krásne!", "Ideálne na púšťanie bublín.", "Slnko nabíja baterky.", "Hraj sa s tieňom na zemi.",
+                "Postav si vonku bunker.", "Urob si s rodičmi piknik.", "Kvietky sa tešia zo slnka.", "Aj chrobáčiky majú pekný deň.", "Načerpaj trošku slnečnej energie.",
+                "Obleč si obľúbené veci.", "Dnes môžeš lietať ako lietadlo.", "Urob dobrý skutok pre prírodu.", "Zahrajte sa na schovávačku.", "Objavuj svet, je super!"
+            ],
+            day_clouds: [
+                "Mráčiky sa k sebe túlia.", "Slniečko sa hrá na schovávačku.", "Aký tvar má ten mrak hore?", "Nebo vyzerá ako z vaty.", "Možno je slnko len unavené.",
+                "Oblaky plávajú ako lode.", "Oblačno, ale stále fajn na hru.", "Ktorý obláčik pripomína zvieratko?", "Sivá farba nie je zlá, je to farba sloníkov.", "Nie je teplo, ani zima, akurát.",
+                "Zober so sebou aj ľahkú bundičku.", "Dnes sa nebudeš potiť.", "Mraky robia oblohe perinu.", "Pozeraj sa, ako rýchlo letia mraky.", "Môžeme ísť hľadať poklady do lesa.",
+                "Keď nesvieti slnko, lepšie sa beží.", "Aké tajomstvá skrývajú mraky?", "Nebo je dnes trochu vážne.", "Počítaj mráčiky na oblohe.", "Pohodový deň na všetko.",
+                "Nevidíme slnko, ale ono tam je.", "Mráčiky nám robia dobrý tieň.", "Možno nám obloha niečo rozpráva.", "Ideálny čas na dlhú prechádzku.", "Aj s mrakmi je svet pekný.",
+                "Slniečko si zobralo dovolenku.", "Dnes sa neopálime.", "Príroda oddychuje od lúčov.", "Nádych, výdych, vzduch je fajn.", "Len sa pohodlne obleč a bež von."
+            ],
+            day_rain: [
+                "Kvap, kvap. Vezmi si kapucňu!", "Prší! Gumáky a pršiplášť to istia!", "Čas na skákanie do mlák!", "Počuješ, ako dážď bubnuje?", "Dážďovky majú dnes oslavu.",
+                "Otváraj dáždnik, ide sa von!", "Kvapky tancujú na oknách.", "Voda z neba polieva kvietky.", "Dnes je deň pre kačičky.", "Dážď zmyje všetok prach.",
+                "Doma pod dekou je s knižkou najlepšie.", "Sleduj, ako kvapky stekajú po skle.", "Možno potom vyjde dúha!", "Gumené čižmy sú najlepší vynález.", "Zatancuj si v daždi.",
+                "Dažďové kvapky robia super hudbu.", "Blafni si do tej najväčšej kaluže!", "Vodníci sa určite tešia.", "Dážď umýva aj autá a stromy.", "Vôňa dažďa je niečo špeciálne.",
+                "Urob si doma prekážkovú dráhu.", "Schovaj sa do sucha a pozeraj von.", "Dáždnik ťa ochráni ako štít.", "Žaby dnes majú diskotéku.", "Spoj dve kvapky na okne.",
+                "Predstav si, že padajú cukríky.", "Kvap-čľap, to sú tie správne zvuky.", "Dážď uspáva aj medvede.", "Dnes môžeme maľovať vodovkami.", "Neboj sa, dážď ťa len trochu umyje."
+            ],
+            day_snow: [
+                "Padá sniežik, ide sa stavať snehuliak!", "Zima je tu, poďme sa guľovať!", "Sánky a boby už čakajú!", "Vločky padajú ako biele pierka.", "Chyť si snehovú vločku na jazyk.",
+                "Spravme anjela do snehu!", "Bielo všade naokolo, nádhera.", "Kto má najrýchlejšie sane?", "Daj si poriadne hrubé rukavice.", "Sneh vŕzga pod topánkami.",
+                "Svet je prikrytý bielou perinou.", "Snehová bitka môže začať!", "Daj mrkvu snehuliakovi na nos.", "Môžeme ísť stopovať zvieratká v snehu.", "Stromčeky vyzerajú ako posypané cukrom.",
+                "Rýchlo, kým sa to neroztopí!", "Po studenom snehu horúci čaj.", "Robíme iglu alebo pevnosť?", "Biela krása klope na okno.", "Sneh je naozaj poriadne studený.",
+                "Nenechaj si zamrznúť noštek.", "Sneží! Svet je hneď tichší.", "Nalep si nos na okno a sleduj vločky.", "Môžeš vyvaľkať obrovskú snehovú guľu.", "Zimná rozprávka vonku ožila.",
+                "Teplo sa obleč, nech neprechladneš.", "Dýchanie v zime robí super dym.", "Biele strechy vyzerajú smiešne.", "Odhrabali ste už chodník?", "Snehuliak ti kýva z dvora."
+            ],
+            day_storm: [
+                "Blesky lietajú, pozeráme sa radšej z okna!", "Hrmí! Príroda robí randál.", "Schovaj sa dnu, vonku sa blýska.", "Búrka umyje celú oblohu.", "Obloha je nahnevaná, radšej buďme doma.",
+                "Počítaj sekundy medzi bleskom a hromom.", "Zvuky búrky sú poriadne hlučné.", "Kresli si pri okne, kým to prejde.", "Hrom buráca ako veľký medveď.", "Blesk je ako veľký foťák na nebi.",
+                "Bezpečne doma pod dekou.", "Nemusíš sa báť, domček ťa ochráni.", "Pri búrke sa dajú hrať super spoločenské hry.", "Pustite si hudbu a tancujte vnútri.", "Oblaky hrajú na bubny.",
+                "Keď búrka odíde, bude čistý vzduch.", "Máme čas na peknú rozprávku.", "Príroda ukazuje, aká je silná.", "Zvieratká sa tiež schovali.", "Môžeme si postaviť stan v obývačke.",
+                "Nevychádzaj von, kým neprestane hrmieť.", "Sleduj blesky, ale len z bezpečia.", "Obloha má asi menšiu oslavu.", "O chvíľu sa slniečko zas ukáže.", "Dažďové kvapky teraz poriadne bijú na okno.",
+                "Zatvor okná, aby nám nepršalo dnu.", "Zavolaj hromu, nech už ide preč.", "Búrka čistí celý svet.", "Toto je poriadna divočina na nebi.", "Tvoj macko ťa určite pred hromom ochráni."
+            ],
+            day_fog: [
+                "Hmla hustá ako mlieko, uuu!", "Vidíš vonku nejakých duchov?", "Svet sa schoval do veľkého oblaku.", "Všetko vyzerá tajomne a záhadne.", "Kto vie, čo sa skrýva v tej hmle?",
+                "Hráme sa na schovávačku s prírodou.", "Hmla pohltila celý domček.", "Keď pôjdete von, držte sa za ruky.", "Pripomína to rozprávku o ježkovi.", "Vlhko a sivo, ale to nevadí.",
+                "Predstav si, že sme v čarovnom lese.", "Vytiahni reflexné prvky, aby ťa bolo vidieť.", "Slnko sa cez to mlieko musí predrať.", "Dá sa hmla chytiť do ruky? Skús to!", "Zahmlené okná môžeš pokresliť.",
+                "Svet je teraz ako z cukrovej vaty.", "Všetky farby akoby zmizli.", "Je to mrak, ktorý spadol na zem.", "Autá musia svietiť, aby sa videli.", "Aj stromy vyzerajú ako strašidielka.",
+                "Úplné ticho, keď je takáto hmla.", "Tajomný deň na vymýšľanie príbehov.", "Krok za krokom pomaličky vonku.", "Pavúčie siete sú teraz krásne vidieť.", "Vyzerá to, akoby spali všetky domy.",
+                "Rozfúkajme tú hmlu preč!", "Možno tam za rohom stojí drak.", "Prechádzka v hmle je ako vo filme.", "Mliečny svet ťa volá von.", "Daj pozor na cestu, lebo slabšie vidno."
+            ],
+            night: [
+                "Hviezdičky svietia, je čas ísť spinkať!", "Zatvor očká, prídu pekné sníčky.", "Mesiačik ťa už stráži.", "Tma vonku znamená, že sa ide do postieľky.", "Počítaj ovečky, kým nezaspíš.",
+                "Prikry sa dobre, aby ti bolo teplúčko.", "Sovy už húkajú, dobrú noc.", "Zajtra je ďalší deň plný hier.", "Hračky už spia, choď aj ty.", "Nech sa ti sníva o lietajúcich autách.",
+                "Mesiac svieti ako lampáš na nebi.", "Aj macko si už ľahol do postele.", "Zavri očká a leť do krajiny snov.", "Dobrú noc a sladké sny!", "Tichúčko, svet vonku zaspáva.",
+                "Noc je tu, tma sa snúbi s tichom.", "Sen je ako film, tak si pusti pekný.", "Spinkaj dlho a načerpaj sily.", "Ráno vyskočíš z postele ako rybička.", "Už ani nepípni, je čas odpočívať.",
+                "Vyspi sa do ružova.", "Spánok je dôležitý, aby si podrástol.", "Tvoj vankúš už na teba čaká.", "Nočná obloha je plná trblietok.", "Zhasíname svetlá, zapíname sny.",
+                "Už sa nehráme, už sa spinká.", "Dobrú noc, myšky aj sloníky.", "Mamička a otecko ťa ľúbia, dobrú noc.", "Zavri oči pevne na kľúčik.", "Pokojný spánok až do rána."
+            ]
+        };
 
-        function getKidMessagesArray(wmoCode, temp, isNight) {
-            const msgs = {
-                nightClear: [
-                    "Hviezdičky svietia, je čas ísť spinkať!", "Mesiačik sa na teba usmieva zhora.", 
-                    "Zatvor očká, nech sa ti snívajú pekné sny.", "Obloha je plná hviezd, dobrú noc!", 
-                    "Tma už prišla, šup do postieľky.", "Spi sladko ako malý medvedík.", 
-                    "Počuješ cvrčkov? Čas na spánok.", "Zajtra je tiež deň, pekné sny!", 
-                    "Nech ťa v noci anjelici strážia.", "Cestuj v snách do rozprávky!"
-                ],
-                nightCloudy: [
-                    "Mráčiky sa k sebe túlia v tme.", "Mesiačik sa schoval pod perinku z mrakov.", 
-                    "Dobré sny pod oblačnou oblohou.", "Oblaky ťa prikryjú ako mäkká perinka.", 
-                    "Hviezdičky dnes spinkajú zaTu je kompletný patch, ktorý nahradí starú statickú funkciu obrovskou knižnicou 270 hlášok (presne 30 pre každú hlavnú kategóriu počasia) a pridá automatické rotovanie každých 5 sekúnd.
+        // Prehliadač pre aktuálne zobrazené hlášky
+        let currentKidMessages = ["Načítavam..."];
+        let kidMessageIndex = 0;
 
-Pôjdeme na to v dvoch krokoch.
-
-### 1. Odstránenie starej logiky a vloženie novej knižnice
-Nájdi v kóde túto pôvodnú funkciu (okolo riadku 351) a **celú ju vymaž**:
-
-```javascript
-        function getKidMessage(wmoCode, temp, isNight) {
-            if (isNight) {
-                if (wmoCode <= 2) return "Hviezdičky svietia, je čas ísť spinkať!";
-                // ... zvyšok starého kódu
-            return "Pozri von z okna, čo sa deje!";
+        function getKidMessageArray(wmoCode, temp, isNight) {
+            if (isNight) return kidMessagesLists.night;
+            
+            if (wmoCode <= 1) {
+                if (temp > 28) return kidMessagesLists.day_hot;
+                if (temp < 0) return kidMessagesLists.day_cold;
+                return kidMessagesLists.day_nice;
+            }
+            if (wmoCode === 2 || wmoCode === 3) return kidMessagesLists.day_clouds;
+            if (wmoCode === 45 || wmoCode === 48) return kidMessagesLists.day_fog;
+            if (wmoCode <= 67 || (wmoCode >= 80 && wmoCode <= 82)) return kidMessagesLists.day_rain;
+            if (wmoCode <= 86) return kidMessagesLists.day_snow;
+            if (wmoCode >= 95) return kidMessagesLists.day_storm;
+            
+            return kidMessagesLists.day_nice;
         }
+
+        // Rotovanie textu každých 5 sekúnd
+        function rotateKidMessage() {
+            if (currentKidMessages && currentKidMessages.length > 0) {
+                document.getElementById('kids-message').textContent = currentKidMessages[kidMessageIndex];
+                kidMessageIndex = (kidMessageIndex + 1) % currentKidMessages.length;
+            }
+        }
+        setInterval(rotateKidMessage, 5000);
 
         async function fetchWeather() {
             try {
