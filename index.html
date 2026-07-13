@@ -421,10 +421,10 @@
         // --- FUNKCIA NA FARBU PODĽA TEPLOTY ---
         function getTempColor(temp) {
             if (temp <= 0) return '#FF80AB';                 // Ružová (mínusy a 0)
-            if (temp < 9) return '#29B6F6';                 // Modrá (1 až 9)
-            if (temp < 19) return '#4CAF50';                 // Zelená (10 až 19)
-            if (temp < 29) return '#FFEB3B';                 // Žltá (20 až 29)
-            if (temp < 39) return '#FF9800';                 // Oranžová (30 až 39)
+            if (temp < 10) return '#29B6F6';                 // Modrá (1 až 9)
+            if (temp < 20) return '#4CAF50';                 // Zelená (10 až 19)
+            if (temp < 30) return '#FFEB3B';                 // Žltá (20 až 29)
+            if (temp < 40) return '#FF9800';                 // Oranžová (30 až 39)
             return '#FF5252';                                // Červená (40 a vyššie)
         }
 
@@ -1004,7 +1004,7 @@
 
         document.getElementById('close-settings-btn').addEventListener('click', closeAllModals);
             
-        applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 3600000);
+        applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 600000);
         
         setTimeout(() => { 
             document.getElementById('widget').style.transition = 'transform 60s linear'; 
@@ -1043,6 +1043,11 @@
         });        
 
         if (document.fonts) { document.fonts.ready.then(calculateAndApplyScale); }
+
+// Neviditeľný spúšťač proti zhasínaniu pri prvom dotyku obrazovky
+        document.body.addEventListener('click', () => {
+            keepScreenAwake();
+        }, { once: true });
     </script>
 </body>
 </html>
