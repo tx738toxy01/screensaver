@@ -671,14 +671,30 @@
             return kidMessagesLists.day_nice;
         }
 
-        // Rotovanie textu každých 5 sekúnd
+        // Pomocná funkcia na náhodné zamiešanie hlášok
+        function shuffleArray(array) {
+            let shuffled = array.slice(); // Vytvorí kópiu
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Rotovanie textu s náhodným miešaním
         function rotateKidMessage() {
             if (currentKidMessages && currentKidMessages.length > 0) {
                 document.getElementById('kids-message').textContent = currentKidMessages[kidMessageIndex];
-                kidMessageIndex = (kidMessageIndex + 1) % currentKidMessages.length;
+                kidMessageIndex++;
+                
+                // Ak sme na konci zoznamu, zamiešame ho do nového poradia a ideme odznova
+                if (kidMessageIndex >= currentKidMessages.length) {
+                    currentKidMessages = shuffleArray(currentKidMessages);
+                    kidMessageIndex = 0;
+                }
             }
         }
-        setInterval(rotateKidMessage, 60000);
+        setInterval(rotateKidMessage, 60000); // 60000 = 1 minúta;
 
         async function fetchWeather() {
             try {
@@ -703,7 +719,8 @@
                 const kidIcon = document.getElementById('kid-icon');
                 kidIcon.innerHTML = getKidSVG(wmo, curTemp, isNight);
                 kidIcon.dataset.weather = weatherTranslations[wmo] || 'Neznáme'; 
-                currentKidMessages = getKidMessageArray(wmo, curTemp, isNight);
+                const newMessages = getKidMessageArray(wmo, curTemp, isNight);
+                currentKidMessages = shuffleArray(newMessages); // Hneď ich prvýkrát zamiešame
                 kidMessageIndex = 0;
                 rotateKidMessage();
 
