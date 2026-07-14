@@ -140,6 +140,7 @@
         }
         .forecast-icon { width: 100%; max-width: 120px; height: 120px; display: flex; justify-content: center; align-items: center; }
         .forecast-icon svg { width: 100%; height: 100%; overflow: visible; }
+        .forecast-desc { font-size: 1.1rem; font-weight: 800; color: #9E9E9E; text-transform: uppercase; text-align: center; line-height: 1.1; margin-top: -5px; }
         
         /* --- NASTAVENIA A MODÁLNE OKNÁ --- */
         #settings-btn {
@@ -251,6 +252,13 @@
         input[type="range"] { width: 140px; }
         .btn-primary { margin-top: 15px; background: #FF9800; color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 1.1rem; font-weight: bold; text-align: center; }
         #modal-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 50; display: none; pointer-events: auto; }
+        
+        /* Nové štýly pre Autocomplete a GPS */
+        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 1rem; }
+        .autocomplete-item:hover { background: rgba(255,255,255,0.1); color: #FF9800; }
+        .autocomplete-item:last-child { border-bottom: none; }
+        .recent-city-tag { background: rgba(255, 152, 0, 0.2); border: 1px solid #FF9800; color: #FF9800; padding: 5px 12px; border-radius: 15px; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
+        .recent-city-tag:hover { background: rgba(255, 152, 0, 0.4); transform: scale(1.05); transition: all 0.2s; }
     </style>
 </head>
 <body>
@@ -315,32 +323,40 @@
                     </div>
                 </div>
                 
-                <div class="adult-forecast">
-                    <div class="forecast-item">
-                        <span id="f1-time">--:--</span>
-                        <div id="f1-icon" class="forecast-icon clickable-icon"></div>
-                        <span id="f1-temp">--°</span>
+                <div style="display: flex; flex-direction: column; flex: 1;">
+                    <div class="adult-forecast">
+                        <div class="forecast-item">
+                            <span id="f1-time">--:--</span>
+                            <div id="f1-icon" class="forecast-icon clickable-icon"></div>
+                            <span id="f1-desc" class="forecast-desc">--</span>
+                            <span id="f1-temp">--°</span>
+                        </div>
+                        <div class="forecast-item">
+                            <span id="f2-time">--:--</span>
+                            <div id="f2-icon" class="forecast-icon clickable-icon"></div>
+                            <span id="f2-desc" class="forecast-desc">--</span>
+                            <span id="f2-temp">--°</span>
+                        </div>
+                        <div class="forecast-item">
+                            <span id="f3-time">--:--</span>
+                            <div id="f3-icon" class="forecast-icon clickable-icon"></div>
+                            <span id="f3-desc" class="forecast-desc">--</span>
+                            <span id="f3-temp">--°</span>
+                        </div>
+                        <div class="forecast-item">
+                            <span id="f4-time">--:--</span>
+                            <div id="f4-icon" class="forecast-icon clickable-icon"></div>
+                            <span id="f4-desc" class="forecast-desc">--</span>
+                            <span id="f4-temp">--°</span>
+                        </div>
+                        <div class="forecast-item">
+                            <span id="f5-time">--:--</span>
+                            <div id="f5-icon" class="forecast-icon clickable-icon"></div>
+                            <span id="f5-desc" class="forecast-desc">--</span>
+                            <span id="f5-temp">--°</span>
+                        </div>
                     </div>
-                    <div class="forecast-item">
-                        <span id="f2-time">--:--</span>
-                        <div id="f2-icon" class="forecast-icon clickable-icon"></div>
-                        <span id="f2-temp">--°</span>
-                    </div>
-                    <div class="forecast-item">
-                        <span id="f3-time">--:--</span>
-                        <div id="f3-icon" class="forecast-icon clickable-icon"></div>
-                        <span id="f3-temp">--°</span>
-                    </div>
-                    <div class="forecast-item">
-                        <span id="f4-time">--:--</span>
-                        <div id="f4-icon" class="forecast-icon clickable-icon"></div>
-                        <span id="f4-temp">--°</span>
-                    </div>
-                    <div class="forecast-item">
-                        <span id="f5-time">--:--</span>
-                        <div id="f5-icon" class="forecast-icon clickable-icon"></div>
-                        <span id="f5-temp">--°</span>
-                    </div>
+                    <div id="provider-label" style="text-align: right; font-size: 0.85rem; color: #78909C; margin-top: 15px; padding-right: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Dáta poskytuje: Open-Meteo</div>
                 </div>
             </div>
         </div>
@@ -357,7 +373,37 @@
     <div id="settings-modal" class="modal">
         <div id="close-settings-btn" class="modal-close-btn">&times;</div>
         <h2>Nastavenia</h2>
-        <div class="setting-row"><label>Mesto:</label><input type="text" id="inp-city"></div>
+        <div class="setting-row" style="align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+            <label style="align-self: flex-start;">Mesto:</label>
+            <div style="display: flex; gap: 10px; width: 100%; position: relative;">
+                <input type="text" id="inp-city" placeholder="Hľadaj mesto..." autocomplete="off" style="flex: 1; width: 100%;">
+                <button id="btn-gps" class="btn-primary" style="margin: 0; padding: 8px 15px; border-radius: 8px;" title="Nájdi podľa GPS">📍</button>
+                <div id="autocomplete-results" style="display:none; position: absolute; top: 100%; left: 0; right: 55px; background: rgba(30, 30, 30, 0.98); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; z-index: 100; max-height: 180px; overflow-y: auto; margin-top: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);"></div>
+            </div>
+            <div id="recent-cities" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;"></div>
+        </div>
+        <div class="setting-row">
+            <label>Zdroj počasia:</label>
+            <select id="inp-provider">
+                <option value="open-meteo">WORLD Open-Meteo</option>
+                <option value="met-norway">WORLD MET Norway</option>
+                <option value="dwd">EUROPE DWD</option>
+                <option value="nws">USA National Weather Service</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <label>Striedanie hlášok:</label>
+            <select id="inp-msg-speed">
+                <option value="5000">5 sekúnd</option>
+                <option value="10000">10 sekúnd</option>
+                <option value="30000">30 sekúnd</option>
+                <option value="60000">1 minúta</option>
+                <option value="300000">5 minút</option>
+                <option value="600000">10 minút</option>
+                <option value="1800000">30 minút</option>
+                <option value="3600000">1 hodina</option>
+            </select>
+        </div>
         <div class="setting-row">
             <label>Veľkosť aplikácie:</label>
             <input type="range" id="inp-scale" min="10" max="100" step="1" value="50">
@@ -414,11 +460,14 @@
 
     <script>
         let config = JSON.parse(localStorage.getItem('familyScreensaver')) || {
-            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: 'auto', scaleValue: 50, iconStyle: 'kids',
-            nightModes: [{ from: "20:00", to: "06:00", brightness: 20 }]
+            city: 'Bratislava', lat: 48.1486, lon: 17.1077, units: 'celsius', timeFormat: '24', showSeconds: false, color: 'auto', scaleValue: 50, iconStyle: 'kids', provider: 'open-meteo', msgSpeed: 10000,
+            nightModes: [{ from: "20:00", to: "06:00", brightness: 20 }], recentCities: []
         };
         if (!config.nightModes) config.nightModes = [{ from: "20:00", to: "06:00", brightness: 20 }];
-        if (!config.color) config.color = 'auto'; // Zabezpečenie pre staršie uložené nastavenia
+        if (!config.color) config.color = 'auto'; 
+        if (!config.provider) config.provider = 'open-meteo'; 
+        if (!config.msgSpeed) config.msgSpeed = 10000; 
+        if (!config.recentCities) config.recentCities = []; // Úložisko pre 5 posledných miest
         
         if (config.scale !== undefined && config.scaleValue === undefined) { config.scaleValue = 50; }
 
@@ -533,6 +582,18 @@
             document.getElementById('seconds').style.display = config.showSeconds ? 'block' : 'none';
             document.getElementById('ampm').style.display = config.timeFormat === '12' ? 'block' : 'none';
             document.getElementById('adult-city').textContent = config.city;
+            
+            // Nastavenie textu poskytovateľa
+            const providerNames = {
+                'open-meteo': 'WORLD Open-Meteo',
+                'met-norway': 'WORLD MET Norway',
+                'nws': 'USA National Weather Service',
+                'dwd': 'EUROPE DWD'
+            };
+            if (document.getElementById('provider-label')) {
+                document.getElementById('provider-label').textContent = `Dáta poskytuje: ${providerNames[config.provider] || 'Open-Meteo'}`;
+            }
+
             calculateAndApplyScale();
             updateTime();
         }
@@ -726,7 +787,7 @@
 
         // Pomocná funkcia na náhodné zamiešanie hlášok
         function shuffleArray(array) {
-            let shuffled = array.slice(); // Vytvorí kópiu
+            let shuffled = array.slice(); 
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -734,37 +795,228 @@
             return shuffled;
         }
 
-        // Rotovanie textu s náhodným miešaním
+        let messageInterval;
         function rotateKidMessage() {
-            if (currentKidMessages && currentKidMessages.length > 0) {
-                document.getElementById('kids-message').textContent = currentKidMessages[kidMessageIndex];
-                kidMessageIndex++;
-                
-                // Ak sme na konci zoznamu, zamiešame ho do nového poradia a ideme odznova
-                if (kidMessageIndex >= currentKidMessages.length) {
-                    currentKidMessages = shuffleArray(currentKidMessages);
-                    kidMessageIndex = 0;
+            const msgEl = document.getElementById('kids-message');
+            if(!msgEl) return;
+            
+            msgEl.style.opacity = 0;
+            setTimeout(() => {
+                if (currentKidMessages && currentKidMessages.length > 0) {
+                    msgEl.textContent = currentKidMessages[kidMessageIndex];
+                } else {
+                    msgEl.textContent = "Počasie je super!";
                 }
-            }
+                msgEl.style.opacity = 1;
+            }, 500);
+
+            clearInterval(messageInterval);
+            messageInterval = setInterval(() => {
+                if (currentKidMessages && currentKidMessages.length > 0) {
+                    kidMessageIndex = (kidMessageIndex + 1) % currentKidMessages.length;
+                    msgEl.style.opacity = 0;
+                    setTimeout(() => {
+                        msgEl.textContent = currentKidMessages[kidMessageIndex];
+                        msgEl.style.opacity = 1;
+                    }, 500);
+                }
+            }, config.msgSpeed);
         }
-        setInterval(rotateKidMessage, 60000); // 60000 = 1 minúta;
 
         async function fetchWeather() {
             try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.lat}&longitude=${config.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m,surface_pressure,cloud_cover,visibility,precipitation&hourly=temperature_2m,weather_code&timezone=auto&temperature_unit=${config.units}&wind_speed_unit=kmh&forecast_days=2`;
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                const curTemp = data.current.temperature_2m;
-                const curApparent = data.current.apparent_temperature;
-                const windSpeed = data.current.wind_speed_10m;
-                const wmo = data.current.weather_code;
-                
-                const currentHour = new Date().getHours();
-                const isNight = currentHour >= 19 || currentHour < 6;
-                const u = '°'; // Odstránené písmeno, ostáva iba gulička stupňa
+                let curTemp, curApparent, windSpeed, wmo, windDir, hum, clouds, precip, press, gusts, visKm;
+                let hourlyForecasts = [];
+                const u = '°'; 
+                let dataLoaded = false;
 
-                // Aplikácia farby podľa teploty na hlavné hodiny a teplotu dospelých
+                if (config.provider === 'met-norway') {
+                    try {
+                        const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${config.lat}&lon=${config.lon}`;
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error("MET Norway odmietol pripojenie");
+                        const data = await res.json();
+                        
+                        const ts = data.properties.timeseries;
+                        const current = ts[0];
+                        const det = current.data.instant.details;
+                        
+                        curTemp = det.air_temperature;
+                        if (config.units === 'fahrenheit') curTemp = (curTemp * 9/5) + 32;
+                        curApparent = curTemp; 
+                        windSpeed = det.wind_speed * 3.6; 
+                        windDir = det.wind_from_direction;
+                        gusts = det.wind_speed_of_gust ? (det.wind_speed_of_gust * 3.6) : windSpeed;
+                        hum = det.relative_humidity;
+                        press = det.air_pressure_at_sea_level;
+                        clouds = det.cloud_area_fraction;
+                        precip = current.data.next_1_hours ? current.data.next_1_hours.details.precipitation_amount : 0;
+                        visKm = '--'; 
+                        
+                        function mapMetToWmo(sym) {
+                            if(!sym) return 3;
+                            let s = sym.split('_')[0]; 
+                            const map = { 'clearsky':0, 'fair':1, 'partlycloudy':2, 'cloudy':3, 'fog':45, 'lightrain':61, 'rain':63, 'heavyrain':65, 'lightsleet':66, 'sleet':66, 'heavysleet':67, 'lightsnow':71, 'snow':73, 'heavysnow':75, 'lightrainshowers':61, 'rainshowers':63, 'snowshowers':73, 'thunder':95, 'rainandthunder':95, 'lightrainandthunder':95 };
+                            return map[s] !== undefined ? map[s] : 3;
+                        }
+                        wmo = current.data.next_1_hours ? mapMetToWmo(current.data.next_1_hours.summary.symbol_code) : 3;
+
+                        for(let i = 1; i <= 5; i++) {
+                            let fData = ts[i * 3];
+                            if(fData) {
+                                let ftemp = fData.data.instant.details.air_temperature;
+                                if (config.units === 'fahrenheit') ftemp = (ftemp * 9/5) + 32;
+                                let fwmo = fData.data.next_1_hours ? mapMetToWmo(fData.data.next_1_hours.summary.symbol_code) : 3;
+                                hourlyForecasts.push({ time: new Date(fData.time), wmo: fwmo, temp: ftemp });
+                            }
+                        }
+                        dataLoaded = true;
+                    } catch(e) { console.warn("MET zlyhal, zapínam zálohu.", e); }
+                } 
+                
+                if (!dataLoaded && config.provider === 'dwd') {
+                    try {
+                        const today = new Date();
+                        const tmrw = new Date(today.getTime() + 86400000);
+                        const url = `https://api.brightsky.dev/weather?lat=${config.lat}&lon=${config.lon}&date=${today.toISOString().split('T')[0]}&last_date=${tmrw.toISOString().split('T')[0]}`;
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error("DWD error");
+                        const data = await res.json();
+                        
+                        if (!data.weather || data.weather.length === 0) throw new Error("Mimo pokrytia (Nemecko/Európa)");
+
+                        let currentIdx = data.weather.findIndex(w => new Date(w.timestamp) >= today);
+                        if (currentIdx === -1) currentIdx = 0;
+                        const wNow = data.weather[currentIdx];
+                        if (!wNow) throw new Error("Chýbajú dáta");
+                        
+                        curTemp = wNow.temperature;
+                        if (config.units === 'fahrenheit') curTemp = (curTemp * 9/5) + 32;
+                        curApparent = curTemp;
+                        windSpeed = wNow.wind_speed; 
+                        windDir = wNow.wind_direction;
+                        gusts = wNow.wind_gust_speed || windSpeed;
+                        hum = wNow.relative_humidity;
+                        press = wNow.pressure_msl;
+                        clouds = wNow.cloud_cover;
+                        precip = wNow.precipitation || 0;
+                        visKm = wNow.visibility ? (wNow.visibility / 1000).toFixed(1) : '--';
+
+                        const iconMap = {'clear-day':0, 'clear-night':0, 'partly-cloudy-day':2, 'partly-cloudy-night':2, 'cloudy':3, 'fog':45, 'rain':63, 'snow':73, 'sleet':66, 'thunderstorm':95, 'hail':96};
+                        wmo = iconMap[wNow.icon] !== undefined ? iconMap[wNow.icon] : 3;
+
+                        for(let i = 1; i <= 5; i++) {
+                            let fData = data.weather[currentIdx + (i * 3)];
+                            if(fData) {
+                                let ftemp = fData.temperature;
+                                if (config.units === 'fahrenheit') ftemp = (ftemp * 9/5) + 32;
+                                let fwmo = iconMap[fData.icon] !== undefined ? iconMap[fData.icon] : 3;
+                                hourlyForecasts.push({ time: new Date(fData.timestamp), wmo: fwmo, temp: ftemp });
+                            }
+                        }
+                        dataLoaded = true;
+                    } catch(e) { console.warn("DWD zlyhal, zapínam zálohu.", e); }
+                } 
+                
+                if (!dataLoaded && config.provider === 'nws') {
+                    try {
+                        const ptsRes = await fetch(`https://api.weather.gov/points/${config.lat},${config.lon}`);
+                        if (!ptsRes.ok) throw new Error("Mimo pokrytia USA");
+                        const ptsData = await ptsRes.json();
+                        const res = await fetch(ptsData.properties.forecastHourly);
+                        if (!res.ok) throw new Error("NWS data error");
+                        const data = await res.json();
+                        const periods = data.properties.periods;
+                        const pNow = periods[0];
+                        
+                        let t = pNow.temperature;
+                        if (pNow.temperatureUnit === 'F' && config.units === 'celsius') t = (t - 32) * 5/9;
+                        if (pNow.temperatureUnit === 'C' && config.units === 'fahrenheit') t = (t * 9/5) + 32;
+                        curTemp = t; curApparent = t;
+                        
+                        let wsMatch = pNow.windSpeed.match(/\d+/);
+                        windSpeed = wsMatch ? parseInt(wsMatch[0]) * 1.609 : 0;
+                        gusts = windSpeed;
+                        
+                        const dirMap = {N:0, NNE:22.5, NE:45, ENE:67.5, E:90, ESE:112.5, SE:135, SSE:157.5, S:180, SSW:202.5, SW:225, WSW:247.5, W:270, WNW:292.5, NW:315, NNW:337.5};
+                        windDir = dirMap[pNow.windDirection] || 0;
+                        hum = pNow.relativeHumidity ? pNow.relativeHumidity.value : '--';
+                        press = '--'; clouds = '--'; visKm = '--';
+                        precip = pNow.probabilityOfPrecipitation ? pNow.probabilityOfPrecipitation.value || 0 : 0;
+                        
+                        function parseNwsDesc(desc) {
+                            const d = desc.toLowerCase();
+                            if (d.includes('thunder')) return 95;
+                            if (d.includes('snow')) return 73;
+                            if (d.includes('rain') || d.includes('showers')) return 63;
+                            if (d.includes('drizzle')) return 51;
+                            if (d.includes('fog')) return 45;
+                            if (d.includes('cloudy')) return 3;
+                            if (d.includes('partly')) return 2;
+                            if (d.includes('clear') || d.includes('sunny')) return 0;
+                            return 1;
+                        }
+                        wmo = parseNwsDesc(pNow.shortForecast);
+
+                        for(let i = 1; i <= 5; i++) {
+                            let fData = periods[i * 3];
+                            if(fData) {
+                                let ftemp = fData.temperature;
+                                if (fData.temperatureUnit === 'F' && config.units === 'celsius') ftemp = (ftemp - 32) * 5/9;
+                                if (fData.temperatureUnit === 'C' && config.units === 'fahrenheit') ftemp = (ftemp * 9/5) + 32;
+                                hourlyForecasts.push({ time: new Date(fData.startTime), wmo: parseNwsDesc(fData.shortForecast), temp: ftemp });
+                            }
+                        }
+                        dataLoaded = true;
+                    } catch (e) { console.warn("NWS zlyhal, zapínam zálohu.", e); }
+                } 
+                
+                // --- OPEN METEO (Funguje ako predvolený, a zároveň ako záchranný fallback pre VŠETKO, čo zlyhá) ---
+                if (!dataLoaded) {
+                    if (config.provider !== 'open-meteo') {
+                        showToast("Zdroj nedostupný, použité Open-Meteo");
+                        document.getElementById('provider-label').textContent = "Dáta poskytuje: Open-Meteo (Záloha)";
+                    }
+                    
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${config.lat}&longitude=${config.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,relative_humidity_2m,surface_pressure,cloud_cover,visibility,precipitation&hourly=temperature_2m,weather_code&timezone=auto&temperature_unit=${config.units}&wind_speed_unit=kmh&forecast_days=2`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    
+                    curTemp = data.current.temperature_2m;
+                    curApparent = data.current.apparent_temperature;
+                    windSpeed = data.current.wind_speed_10m;
+                    wmo = data.current.weather_code;
+                    windDir = data.current.wind_direction_10m;
+                    gusts = data.current.wind_gusts_10m;
+                    hum = data.current.relative_humidity_2m;
+                    clouds = data.current.cloud_cover;
+                    precip = data.current.precipitation;
+                    press = data.current.surface_pressure;
+                    visKm = (data.current.visibility / 1000).toFixed(1);
+
+                    const currentHour = new Date().getHours();
+                    const targetIndexes = [currentHour + 3, currentHour + 6, currentHour + 9, currentHour + 12, currentHour + 15];
+                    
+                    targetIndexes.forEach(idx => {
+                        if (data.hourly.time && data.hourly.time[idx]) {
+                            const codesToAnalyze = [
+                                data.hourly.weather_code[idx - 2],
+                                data.hourly.weather_code[idx - 1],
+                                data.hourly.weather_code[idx]
+                            ];
+                            hourlyForecasts.push({
+                                time: new Date(data.hourly.time[idx]),
+                                wmo: getWorstWeatherCode(codesToAnalyze),
+                                temp: data.hourly.temperature_2m[idx]
+                            });
+                        }
+                    });
+                }
+
+                // ---- SPOLOČNÉ VYKRESLENIE DO WIDGETU ----
+                const currentHourDate = new Date();
+                const isNight = currentHourDate.getHours() >= 19 || currentHourDate.getHours() < 6;
+
                 const tempColor = getTempColor(curTemp);
                 if (config.color === 'auto') {
                     document.getElementById('time').style.color = tempColor;
@@ -780,7 +1032,7 @@
                 document.getElementById('kid-weather-desc').innerHTML = wTranslation.replace(' ', '<br>');
                 
                 const newMessages = getKidMessageArray(wmo, curTemp, isNight);
-                currentKidMessages = shuffleArray(newMessages); // Hneď ich prvýkrát zamiešame
+                currentKidMessages = shuffleArray(newMessages);
                 kidMessageIndex = 0;
                 rotateKidMessage();
 
@@ -793,56 +1045,46 @@
                 document.getElementById('adult-main-temp').textContent = `${Math.round(curTemp)}${u}`;
                 document.getElementById('adult-feels-like').textContent = `${Math.round(curApparent)}${u}`;
                 
-                const windDir = data.current.wind_direction_10m;
                 const arrowSVG = `<svg viewBox="0 0 24 24" style="width: 1.2em !important; height: 1.2em !important; transform: rotate(${windDir + 180}deg); fill: currentColor; flex-shrink: 0;"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>`;
                 document.getElementById('adult-wind').innerHTML = `${arrowSVG} <span>${Math.round(windSpeed)} km/h</span>`;
 
-                document.getElementById('det-hum').textContent = `${data.current.relative_humidity_2m} %`;
-                document.getElementById('det-clouds').textContent = `${data.current.cloud_cover} %`;
-                document.getElementById('det-precip').textContent = `${data.current.precipitation} mm`;
-                document.getElementById('det-press').textContent = `${Math.round(data.current.surface_pressure)} hPa`;
-                document.getElementById('det-wind').textContent = `${data.current.wind_speed_10m} km/h`;
-                document.getElementById('det-gusts').textContent = `${data.current.wind_gusts_10m} km/h`;
-                document.getElementById('det-dir').textContent = getWindDirection(data.current.wind_direction_10m);
-                
-                const visKm = (data.current.visibility / 1000).toFixed(1);
-                document.getElementById('det-vis').textContent = `${visKm} km`;
+                document.getElementById('det-hum').textContent = hum !== '--' ? `${Math.round(hum)} %` : '-- %';
+                document.getElementById('det-clouds').textContent = clouds !== '--' ? `${Math.round(clouds)} %` : '-- %';
+                document.getElementById('det-precip').textContent = `${precip} mm`;
+                document.getElementById('det-press').textContent = press !== '--' ? `${Math.round(press)} hPa` : '-- hPa';
+                document.getElementById('det-wind').textContent = `${Math.round(windSpeed)} km/h`;
+                document.getElementById('det-gusts').textContent = gusts !== '--' ? `${Math.round(gusts)} km/h` : '-- km/h';
+                document.getElementById('det-dir').textContent = getWindDirection(windDir);
+                document.getElementById('det-vis').textContent = visKm === '--' ? '--' : `${visKm} km`;
 
-                const forecasts = [
-                    { p: 'f1', idx: currentHour + 3 }, { p: 'f2', idx: currentHour + 6 },
-                    { p: 'f3', idx: currentHour + 9 }, { p: 'f4', idx: currentHour + 12 },
-                    { p: 'f5', idx: currentHour + 15 }
-                ];
-
-                forecasts.forEach(f => {
-                    const fTime = new Date(data.hourly.time[f.idx]);
-                    let displayHour = fTime.getHours();
-                    const fIsNight = displayHour >= 19 || displayHour < 6;
-                    
-                    // Zhrnutie 3 hodín (interval od idx-2 do idx)
-                    const codesToAnalyze = [
-                        data.hourly.weather_code[f.idx - 2],
-                        data.hourly.weather_code[f.idx - 1],
-                        data.hourly.weather_code[f.idx]
-                    ];
-                    const fWmo = getWorstWeatherCode(codesToAnalyze);
-                    const fTemp = data.hourly.temperature_2m[f.idx];
-                    
-                    let displayAmPm = '';
-                    if (config.timeFormat === '12') {
-                        displayAmPm = displayHour >= 12 ? ' PM' : ' AM';
-                        displayHour = displayHour % 12 || 12;
+                hourlyForecasts.forEach((f, index) => {
+                    const p = `f${index + 1}`;
+                    if (document.getElementById(`${p}-time`)) {
+                        let displayHour = f.time.getHours();
+                        const fIsNight = displayHour >= 19 || displayHour < 6;
+                        
+                        let displayAmPm = '';
+                        if (config.timeFormat === '12') {
+                            displayAmPm = displayHour >= 12 ? ' PM' : ' AM';
+                            displayHour = displayHour % 12 || 12;
+                        }
+                        document.getElementById(`${p}-time`).textContent = `${String(displayHour).padStart(2, '0')}:00${displayAmPm}`;
+                        document.getElementById(`${p}-temp`).textContent = Math.round(f.temp) + u;
+                        
+                        const fIcon = document.getElementById(`${p}-icon`);
+                        fIcon.innerHTML = config.iconStyle === 'kids' ? getKidSVG(f.wmo, f.temp, fIsNight) : getAdultSVG(f.wmo, fIsNight);
+                        fIcon.dataset.weather = weatherTranslations[f.wmo] || 'Neznáme'; 
+                        
+                        const fDesc = document.getElementById(`${p}-desc`);
+                        if (fDesc) fDesc.textContent = weatherTranslations[f.wmo] || 'Neznáme';
                     }
-                    document.getElementById(`${f.p}-time`).textContent = `${String(displayHour).padStart(2, '0')}:00${displayAmPm}`;
-                    document.getElementById(`${f.p}-temp`).textContent = Math.round(fTemp) + u;
-                    
-                    const fIcon = document.getElementById(`${f.p}-icon`);
-                    fIcon.innerHTML = config.iconStyle === 'kids' ? getKidSVG(fWmo, fTemp, fIsNight) : getAdultSVG(fWmo, fIsNight);
-                    fIcon.dataset.weather = weatherTranslations[fWmo] || 'Neznáme'; 
                 });
                 
                 calculateAndApplyScale();
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error("Kritická chyba počasia:", err); 
+                showToast("Chyba pripojenia!");
+            }
         }
 
         // Engine, ktorý prechádza zoznam časov a nastavuje jas aplikácie
@@ -998,7 +1240,129 @@
             liveSave(); 
         });
 
+        // Vykreslenie histórie do štítkov
+        function renderRecentCities() {
+            const container = document.getElementById('recent-cities');
+            if(!container) return;
+            container.innerHTML = '';
+            config.recentCities.forEach(city => {
+                const tag = document.createElement('div');
+                tag.className = 'recent-city-tag';
+                tag.textContent = city.name;
+                tag.onclick = () => selectCity(city.name, city.lat, city.lon);
+                container.appendChild(tag);
+            });
+        }
+
+        // Hlavná funkcia na uloženie zvoleného mesta
+        function selectCity(name, lat, lon) {
+            config.city = name;
+            config.lat = lat;
+            config.lon = lon;
+            document.getElementById('inp-city').value = name;
+            document.getElementById('adult-city').textContent = name;
+            
+            // Manažment histórie (max 5)
+            if (!config.recentCities) config.recentCities = [];
+            config.recentCities = config.recentCities.filter(c => c.name !== name); // Vymaže duplikát ak tam už je
+            config.recentCities.unshift({name, lat, lon}); // Pridá na začiatok
+            if(config.recentCities.length > 5) config.recentCities.pop(); // Vyhodí najstaršie ak ich je viac ako 5
+            
+            localStorage.setItem('familyScreensaver', JSON.stringify(config));
+            renderRecentCities();
+            fetchWeather();
+        }
+
+        // Logika Autocomplete Našepkávača
+        let cityTimeout;
+        const cityInput = document.getElementById('inp-city');
+        
+        // Vyčistenie poľa pri kliknutí (focus)
+        cityInput.addEventListener('focus', () => {
+            cityInput.value = '';
+        });
+
+        cityInput.addEventListener('input', (e) => {
+            clearTimeout(cityTimeout);
+            const val = e.target.value;
+            const container = document.getElementById('autocomplete-results');
+            if(val.length < 2) {
+                container.style.display = 'none';
+                return;
+            }
+            cityTimeout = setTimeout(async () => {
+                try {
+                    // Pridané: API automaticky radí výsledky podľa populácie. 
+                    // Budeme filtrovať výsledky tak, aby sme zahodili príliš malé dediny (ak majú populáciu < 5000)
+                    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(val)}&count=10&language=sk`);
+                    const data = await res.json();
+                    container.innerHTML = '';
+                    
+                    if(data.results && data.results.length > 0) {
+    const sortedResults = data.results.sort((a, b) => (b.population || 0) - (a.population || 0));
+    
+    sortedResults.slice(0, 5).forEach(city => {
+        const div = document.createElement('div');
+        div.className = 'autocomplete-item';
+        const desc = [city.name, city.admin1, city.country].filter(Boolean).join(', ');
+        div.textContent = desc;
+        div.onclick = () => {
+            selectCity(city.name, city.latitude, city.longitude);
+            container.style.display = 'none';
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+} else {
+    container.style.display = 'none';
+}
+                } catch(err){}
+            }, 400); // 400ms odozva po skončení písania (šetrí API)
+        });
+
+        // Schovanie našepkávača ak používateľ klikne mimo neho
+        document.addEventListener('click', (e) => {
+            if(e.target.id !== 'inp-city') {
+                const container = document.getElementById('autocomplete-results');
+                if(container) container.style.display = 'none';
+            }
+        });
+
+        // Tlačidlo lokalizácie (GPS)
+        document.getElementById('btn-gps').addEventListener('click', () => {
+            const btn = document.getElementById('btn-gps');
+            const originalIcon = btn.textContent;
+            btn.textContent = '⏳';
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    try {
+                        // Zistíme meno mesta z GPS súradníc (Bezplatná OpenStreetMap API)
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&accept-language=sk`);
+                        const data = await res.json();
+                        let cityName = "Moja Poloha";
+                        if(data && data.address) {
+                            cityName = data.address.city || data.address.town || data.address.village || data.address.county || "Moja Poloha";
+                        }
+                        selectCity(cityName, lat, lon);
+                    } catch(e) {
+                        selectCity("Moja Poloha", lat, lon);
+                    }
+                    btn.textContent = originalIcon;
+                }, (error) => {
+                    showToast("Zlyhalo získanie GPS. Skontrolujte povolenia.");
+                    btn.textContent = originalIcon;
+                });
+            } else {
+                showToast("GPS nie je podporované vo vašom zariadení.");
+                btn.textContent = originalIcon;
+            }
+        });
+
         async function liveSave(e) {
+            config.provider = document.getElementById('inp-provider').value;
+            config.msgSpeed = parseInt(document.getElementById('inp-msg-speed').value);
             config.units = document.getElementById('inp-units').value; 
             config.timeFormat = document.getElementById('inp-time').value;
             config.scaleValue = parseInt(document.getElementById('inp-scale').value);
@@ -1021,6 +1385,7 @@
             applyConfig(); 
             updateBrightnessByTime();
 
+            // Ošetrenie stavu, ak človek napíše mesto ale nevyberie ho z roletky (iba stlačí Enter / zmení políčko)
             const nCity = document.getElementById('inp-city').value;
             if(nCity.toLowerCase() !== config.city.toLowerCase() && nCity.trim() !== '') {
                 document.getElementById('adult-city').textContent = 'Hľadám...';
@@ -1028,25 +1393,24 @@
                     const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${nCity}&count=1`);
                     const data = await res.json();
                     if(data.results && data.results.length > 0) {
-                        config.lat = data.results[0].latitude; 
-                        config.lon = data.results[0].longitude; 
-                        config.city = data.results[0].name;
-                        localStorage.setItem('familyScreensaver', JSON.stringify(config));
-                        document.getElementById('adult-city').textContent = config.city;
-                        fetchWeather(); 
+                        selectCity(data.results[0].name, data.results[0].latitude, data.results[0].longitude);
                     } else {
                         document.getElementById('adult-city').textContent = config.city;
                     }
                 } catch(err) {}
             }
 
-            // Zabezpečí okamžité prekreslenie a farbenie aj pri zmene formátu času
-            if (e && (e.target.id === 'inp-units' || e.target.id === 'inp-icon-style' || e.target.id === 'inp-color' || e.target.id === 'inp-time')) {
+            // Zabezpečí okamžité stiahnutie nových dát a prekreslenie pri zmene poskytovateľa alebo vizuálu
+            if (e && (e.target.id === 'inp-provider' || e.target.id === 'inp-units' || e.target.id === 'inp-icon-style' || e.target.id === 'inp-color' || e.target.id === 'inp-time')) {
                 fetchWeather();
+            }
+            // Zabezpečí reštartovanie intervalu hlášok pri zmene rýchlosti
+            if (e && e.target.id === 'inp-msg-speed') {
+                rotateKidMessage();
             }
         }
 
-        ['inp-units', 'inp-time', 'inp-icon-style', 'inp-color', 'inp-city', 'inp-seconds'].forEach(id => {
+        ['inp-provider', 'inp-msg-speed', 'inp-units', 'inp-time', 'inp-icon-style', 'inp-color', 'inp-city', 'inp-seconds'].forEach(id => {
             document.getElementById(id).addEventListener('change', liveSave);
         });
 
@@ -1058,7 +1422,10 @@
 
         settingsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            document.getElementById('inp-provider').value = config.provider || 'open-meteo';
+            document.getElementById('inp-msg-speed').value = config.msgSpeed || 10000;
             document.getElementById('inp-city').value = config.city; 
+            renderRecentCities(); // Vykreslí klikateľný zoznam posledných miest
             document.getElementById('inp-units').value = config.units;
             document.getElementById('inp-scale').value = config.scaleValue || 50;
             document.getElementById('inp-icon-style').value = config.iconStyle || 'kids';
@@ -1076,7 +1443,7 @@
 
         document.getElementById('close-settings-btn').addEventListener('click', closeAllModals);
             
-        applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 300000);
+        applyConfig(); setInterval(updateTime, 1000); fetchWeather(); setInterval(fetchWeather, 1800000);
         
         setTimeout(() => { 
             document.getElementById('widget').style.transition = 'transform 60s linear'; 
