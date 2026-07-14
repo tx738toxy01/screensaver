@@ -126,19 +126,19 @@
         #adult-desc { font-size: 2rem; font-weight: 900; color: #E0E0E0; line-height: 1.2; }
         #adult-wind { font-size: 1.5rem; font-weight: 700; color: #90CAF9; display: flex; align-items: center; gap: 6px; }
         
-        .temp-row { display: flex; align-items: center; gap: 15px; margin: 2px 0 5px 0;}
+        .temp-row { display: flex; align-items: flex-end; gap: 30px; margin: 20px 0 5px 0;}
         #adult-main-temp { font-size: 6rem; font-weight: 900; line-height: 0.8; text-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
         
-        .feels-like-col { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .feels-label { font-size: 1.1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; margin-bottom: -4px; z-index: 1;}
-        #adult-feels-like { font-size: 3.5rem; font-weight: 700; color: #B0BEC5; line-height: 1;}
+        .feels-like-col { position: relative; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; }
+        .feels-label { position: absolute; top: -20px; left: 0; font-size: 1.1rem; color: #9E9E9E; text-transform: uppercase; font-weight: 800; z-index: 1;}
+        #adult-feels-like { font-size: 6rem; font-weight: 900; color: #B0BEC5; line-height: 0.8; text-shadow: 2px 2px 8px rgba(0,0,0,0.5);}
 
-        .adult-forecast { display: flex; justify-content: space-between; flex: 1; margin-left: 15px; gap: 15px; }
+        .adult-forecast { display: flex; justify-content: space-between; flex: 1; margin-left: 20px; gap: 20px; }
         .forecast-item { 
             display: flex; flex-direction: column; align-items: center; 
-            font-size: 1.6rem; font-weight: 700; color: #B0BEC5; gap: 10px; width: 100%;
+            font-size: 1.8rem; font-weight: 700; color: #B0BEC5; gap: 10px; width: 100%;
         }
-        .forecast-icon { width: 100%; max-width: 90px; height: 90px; display: flex; justify-content: center; align-items: center; }
+        .forecast-icon { width: 100%; max-width: 120px; height: 120px; display: flex; justify-content: center; align-items: center; }
         .forecast-icon svg { width: 100%; height: 100%; overflow: visible; }
         
         /* --- NASTAVENIA A MODÁLNE OKNÁ --- */
@@ -273,29 +273,35 @@
 
     <div id="widget">
         <div id="widget-inner">
-            <div class="kids-section">
-                <div class="main-display">
-                    <div id="kid-icon" class="clickable-icon"></div>
-                    <div class="time-block">
-                        <div id="date-display">--</div>
-                        <div id="time-container">
-                            <div id="time">00:00</div>
-                            <div id="seconds">00</div>
-                            <div id="ampm">AM</div>
-                        </div>
+            <div class="kids-section" style="display: grid; grid-template-columns: auto auto; grid-template-rows: auto auto; column-gap: 60px; row-gap: 50px; margin-bottom: 30px; align-items: center; justify-content: center;">
+                
+                <!-- Ikona (Vľavo hore) - Zväčšená natvrdo, aby sa nikdy nezmenšila -->
+                <div id="kid-icon" class="clickable-icon" style="justify-self: center; width: 320px; height: 320px;"></div>
+                
+                <!-- Čas (Vpravo hore) - Bez duplicitnej teploty -->
+                <div class="time-block" style="margin-top: 0; justify-self: center; align-items: center;">
+                    <div id="date-display" style="margin-left: 0; align-self: flex-start;">--</div>
+                    <div id="time-container">
+                        <div id="time">00:00</div>
+                        <div id="seconds">00</div>
+                        <div id="ampm">AM</div>
                     </div>
                 </div>
-                <div class="kids-message-box">
+
+                <!-- Popis počasia (Vľavo dole, na úrovni hlášky a bez Caps Locku) -->
+                <div id="kid-weather-desc" style="text-align: center; font-size: 2.8rem; font-weight: 700; line-height: 1.2; color: #B0BEC5;"></div>
+                
+                <!-- Detská hláška (Vpravo dole, zarovnaná presne na stred hodín vďaka mriežke) -->
+                <div class="kids-message-box" style="margin: 0; justify-self: center;">
                     <div id="kids-message">Načítavam...</div>
                 </div>
+                
             </div>
 
             <div class="adults-section">
                 <div class="adult-current" id="adult-current-btn" title="Klikni pre detaily">
-                    <div id="adult-current-icon" class="adult-current-icon"></div>
                     <div class="adult-details">
                         <div class="desc-wind-row">
-                            <span id="adult-desc">Načítavam...</span>
                             <div id="adult-wind">💨 -- km/h</div>
                         </div>
                         <div class="temp-row">
@@ -329,6 +335,11 @@
                         <span id="f4-time">--:--</span>
                         <div id="f4-icon" class="forecast-icon clickable-icon"></div>
                         <span id="f4-temp">--°</span>
+                    </div>
+                    <div class="forecast-item">
+                        <span id="f5-time">--:--</span>
+                        <div id="f5-icon" class="forecast-icon clickable-icon"></div>
+                        <span id="f5-temp">--°</span>
                     </div>
                 </div>
             </div>
@@ -419,6 +430,23 @@
         };
 
         // --- FUNKCIA NA FARBU PODĽA TEPLOTY ---
+        // Funkcia, ktorá zistí najzávažnejšie počasie z viacerých hodín, aby neušiel dážď
+        function getWorstWeatherCode(codes) {
+            const severity = {
+                0: 0, 1: 1, 2: 2, 3: 3,
+                45: 4, 48: 5,
+                51: 6, 53: 7, 55: 8, 56: 9, 57: 10,
+                61: 11, 63: 12, 65: 13, 66: 14, 67: 15,
+                71: 16, 73: 17, 75: 18, 77: 19,
+                80: 20, 81: 21, 82: 22,
+                85: 23, 86: 24,
+                95: 25, 96: 26, 99: 27
+            };
+            return codes.reduce((worst, current) => {
+                return (severity[current] || 0) > (severity[worst] || 0) ? current : worst;
+            }, codes[0]);
+        }
+
         function getTempColor(temp) {
             if (temp <= 0) return '#FF80AB';                 // Ružová (mínusy a 0)
             if (temp < 10) return '#29B6F6';                 // Modrá (1 až 9)
@@ -499,6 +527,7 @@
             } else {
                 document.body.style.color = config.color;
                 document.getElementById('time').style.color = config.color;
+                document.getElementById('adult-main-temp').style.color = config.color;
             }
 
             document.getElementById('seconds').style.display = config.showSeconds ? 'block' : 'none';
@@ -733,24 +762,34 @@
                 
                 const currentHour = new Date().getHours();
                 const isNight = currentHour >= 19 || currentHour < 6;
-                const u = config.units === 'celsius' ? '°C' : '°F';
+                const u = '°'; // Odstránené písmeno, ostáva iba gulička stupňa
 
-                // NOVÉ: Aplikácia farby podľa teploty na hlavné hodiny
+                // Aplikácia farby podľa teploty na hlavné hodiny a teplotu dospelých
+                const tempColor = getTempColor(curTemp);
                 if (config.color === 'auto') {
-                    document.getElementById('time').style.color = getTempColor(curTemp);
+                    document.getElementById('time').style.color = tempColor;
+                    document.getElementById('adult-main-temp').style.color = tempColor;
+                } else {
+                    document.getElementById('adult-main-temp').style.color = config.color;
                 }
 
                 const kidIcon = document.getElementById('kid-icon');
                 kidIcon.innerHTML = getKidSVG(wmo, curTemp, isNight);
-                kidIcon.dataset.weather = weatherTranslations[wmo] || 'Neznáme'; 
+                const wTranslation = weatherTranslations[wmo] || 'Neznáme';
+                kidIcon.dataset.weather = wTranslation; 
+                document.getElementById('kid-weather-desc').innerHTML = wTranslation.replace(' ', '<br>');
+                
                 const newMessages = getKidMessageArray(wmo, curTemp, isNight);
                 currentKidMessages = shuffleArray(newMessages); // Hneď ich prvýkrát zamiešame
                 kidMessageIndex = 0;
                 rotateKidMessage();
 
-                document.getElementById('adult-current-icon').innerHTML = getAdultSVG(wmo, isNight);
-                
-                document.getElementById('adult-desc').textContent = weatherTranslations[wmo] || 'Neznáme';
+                if (document.getElementById('adult-current-icon')) {
+                    document.getElementById('adult-current-icon').innerHTML = getAdultSVG(wmo, isNight);
+                }
+                if (document.getElementById('adult-desc')) {
+                    document.getElementById('adult-desc').textContent = weatherTranslations[wmo] || 'Neznáme';
+                }
                 document.getElementById('adult-main-temp').textContent = `${Math.round(curTemp)}${u}`;
                 document.getElementById('adult-feels-like').textContent = `${Math.round(curApparent)}${u}`;
                 
@@ -771,14 +810,22 @@
 
                 const forecasts = [
                     { p: 'f1', idx: currentHour + 3 }, { p: 'f2', idx: currentHour + 6 },
-                    { p: 'f3', idx: currentHour + 9 }, { p: 'f4', idx: currentHour + 12 }
+                    { p: 'f3', idx: currentHour + 9 }, { p: 'f4', idx: currentHour + 12 },
+                    { p: 'f5', idx: currentHour + 15 }
                 ];
 
                 forecasts.forEach(f => {
                     const fTime = new Date(data.hourly.time[f.idx]);
                     let displayHour = fTime.getHours();
                     const fIsNight = displayHour >= 19 || displayHour < 6;
-                    const fWmo = data.hourly.weather_code[f.idx];
+                    
+                    // Zhrnutie 3 hodín (interval od idx-2 do idx)
+                    const codesToAnalyze = [
+                        data.hourly.weather_code[f.idx - 2],
+                        data.hourly.weather_code[f.idx - 1],
+                        data.hourly.weather_code[f.idx]
+                    ];
+                    const fWmo = getWorstWeatherCode(codesToAnalyze);
                     const fTemp = data.hourly.temperature_2m[f.idx];
                     
                     let displayAmPm = '';
@@ -993,7 +1040,8 @@
                 } catch(err) {}
             }
 
-            if (e && (e.target.id === 'inp-units' || e.target.id === 'inp-icon-style' || e.target.id === 'inp-color')) {
+            // Zabezpečí okamžité prekreslenie a farbenie aj pri zmene formátu času
+            if (e && (e.target.id === 'inp-units' || e.target.id === 'inp-icon-style' || e.target.id === 'inp-color' || e.target.id === 'inp-time')) {
                 fetchWeather();
             }
         }
